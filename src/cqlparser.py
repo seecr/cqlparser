@@ -21,6 +21,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
+
 class UnsupportedCQL(Exception):
 	def __call__(self, *ignoredArgs):
 		raise self
