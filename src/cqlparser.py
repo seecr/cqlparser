@@ -41,6 +41,9 @@ class CQLAbstractSyntaxNode:
 	def __eq__(self, other):
 		return self.__class__ == other.__class__ and self._children == other._children
 	
+	def children(self):
+		return self._children
+	
 for aClass in ['CQL_QUERY', 'SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDEX', 'COMPARITOR']:
 	exec("""class %s(CQLAbstractSyntaxNode):
 	pass""" % aClass)
