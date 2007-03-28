@@ -75,9 +75,13 @@ class CQLParserTest(unittest.TestCase):
 		self.assertException(CQLParseException, ')')
 		
 	def testIndexRelationSearchTerm(self):
-		self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(INDEX('field1'), COMPARITOR('='), SEARCH_TERM('200')))), parseString('field1 = 200'))
-		self.assertException(UnsupportedCQL, 'field1 > 200')
-		self.assertException(UnsupportedCQL, 'field1 <> 200')
+		Q = CQL_QUERY
+		SC = SCOPED_CLAUSE
+		SE = SEARCH_CLAUSE
+		T = SEARCH_TERM
+		self.assertEquals(Q(SC(SE(INDEX('field1'), COMPARITOR('='), T('200')))), parseString('field1 = 200'))
+		for comparitor in ['>', '<', '>=', '<=', '<>']:
+			self.assertException(UnsupportedCQL, 'field1 %s 200' % comparitor)
 		self.assertException(UnsupportedCQL, 'field1 = /aModifierName 200')
 	
 	### Helper methods

@@ -30,7 +30,7 @@ import re
 # charString1 is every token except a " ( ) > = < / and spaces
 charString1 = r'[^"()>=<\s/]+'
 # charString2 is every token surrounded by quotes "", except \"
-charString2 = r'(\").+?((?<!\\)\")'
+charString2 = r'(\").*?((?<!\\)\")'
 # tokens are charString1, charString2 or ( ) >= <> <= > < = /
 tokens = [ r'\(', r'\)', '>=', '<>', '<=', '>', '<', r'\=', r'\/', charString2, charString1 ]
 
@@ -69,7 +69,7 @@ class TokenStack:
 
 	def prev(self):
 		if self._pointer <= 0:
-			raise ProgrammingErrorBlameTeddy
+			raise ProgrammingError
 		self._pointer += -1
 		return self._tokens[self._pointer]
 	
