@@ -83,7 +83,4 @@ class LuceneComposerTest(TestCase):
 			input = expected
 		result = cqlToLucene(input)
 		self.assertEquals(expected, result)			
-			
-
-if __name__ == '__main__':
-	unittest.main()
+		

@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 ## begin license ##
 #
 #    CQLParser is parser that builts up a parsetree for the given CQL and 
@@ -88,7 +87,3 @@ class CQLParserTest(unittest.TestCase):
 			self.fail()
 		except exceptionClass, e:
 			pass
-		
-
-if __name__ == '__main__':
-	unittest.main()

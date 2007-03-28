@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 ## begin license ##
 #
 #    CQLParser is parser that builts up a parsetree for the given CQL and 
@@ -127,6 +126,3 @@ class CQLTokenizerTest(unittest.TestCase):
 	def testBugReportedByErik(self):
 		stack = cqltokenizer.tokenStack('lom.general.title="en" AND (lom.general.title="green" OR lom.general.title="red")')
 		self.assertEquals(['lom.general.title', '=', '"en"', 'AND', '(', 'lom.general.title', '=', '"green"', 'OR', 'lom.general.title', '=', '"red"', ')'], stack._tokens)
-	
-if __name__ == '__main__':
-	unittest.main()
