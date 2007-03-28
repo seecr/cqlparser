@@ -3,7 +3,7 @@
 #
 #    CQLParser is parser that builts up a parsetree for the given CQL and 
 #    can convert this into other formats.
-#    Copyright (C) 2005, 2006 Seek You Too B.V. (CQ2) http://www.cq2.nl
+#    Copyright (C) 2005-2007 Seek You Too B.V. (CQ2) http://www.cq2.nl
 #
 #    This file is part of CQLParser
 #
@@ -22,13 +22,6 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-#
-# Generated with:
-#
-# $Id$
-#
-# on Mon Jul 24 16:12:39 CEST 2006 by thijs
-#
 
 import os, sys
 os.system('rm -f *.pyc')
