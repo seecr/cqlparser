@@ -33,6 +33,7 @@ import unittest
 from cqlparsertest import CQLParserTest
 from cqltokenizertest import CQLTokenizerTest
 from lucenecomposertest import LuceneComposerTest
+from cqlcomposertest import CQLComposerTest
 
 if __name__ == '__main__':
 	unittest.main()
