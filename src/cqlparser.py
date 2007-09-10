@@ -120,7 +120,9 @@ class CQLParser:
 
     def cqlQuery(self):
         """cqlQuery ::= prefixAssignment cqlQuery | scopedClause"""
-        if self._tokens.hasNext() and self._tokens.peek() == ">":
+        if not self._tokens.hasNext():
+            return False
+        if self._tokens.peek() == ">":
             return \
                 self.construct(CQL_QUERY,
                     self.prefixAssignment,
@@ -161,12 +163,14 @@ class CQLParser:
     
     def boolean(self):
         """boolean ::= 'and' | 'or' | 'not' | 'prox'"""
-        return \
-            self.construct(UnsupportedCQL("booleanGroup: 'prox'"),
-                self.token('prox')) or \
-            self.construct(BOOLEAN, self.token('and', caseSensitive = False)) or \
-            self.construct(BOOLEAN, self.token('or', caseSensitive = False)) or \
-            self.construct(BOOLEAN, self.token('not', caseSensitive = False))
+        if not self._tokens.hasNext():
+            return False
+        token = self._tokens.peek().lower()
+        if token == 'prox':
+            raise UnsupportedCQL("booleanGroup: 'prox'")
+        if token in ['and', 'or', 'not']:
+            return BOOLEAN(self._tokens.next().lower())
+        return False
     
     def booleanGroup(self):
         """
@@ -174,12 +178,16 @@ class CQLParser:
         we use:
         booleanGroup ::= boolean modifierList | boolean
         """
-        return \
-            self.construct(UnsupportedCQL("modifierLists are not supported"),
-                self.boolean,
-                self.modifierList) or \
-            self.construct(lambda x: x,
-                self.boolean)
+        #head = self.
+        if not self._tokens.hasNext():
+            return False
+        head = self.tryTerms(self.boolean)
+        if not head:
+            return False
+        tail = self.tryTerms(self.modifierList)
+        if tail:
+            raise UnsupportedCQL("modifierLists are not supported")
+        return head[0]
     
     def modifierList(self):
         return self.token('/')()
@@ -191,7 +199,9 @@ class CQLParser:
             index relation searchTerm |
             searchTerm
         """
-        if self._tokens.hasNext() and self._tokens.peek() == "(":
+        if not self._tokens.hasNext():
+            return False
+        if self._tokens.peek() == "(":
             return \
                 self.construct(SEARCH_CLAUSE,
                     self.token('('),
@@ -213,7 +223,9 @@ class CQLParser:
         we use:
         relation ::= comparitor modifierList | comparitor
         """
-        if self._tokens.hasNext() and self._tokens.peek() == "/":
+        if not self._tokens.hasNext():
+            return False
+        if self._tokens.peek() == "/":
             return \
                 self.construct(UnsupportedCQL("modifierLists are not supported"),
                     self.comparitor,
@@ -228,19 +240,15 @@ class CQLParser:
         comparitorSymbol ::= '=' | '>' | '<' | '>=' | '<=' | '<>'
         we use a shortcut since most of this is not supported
         """
-        return \
-            self.construct(COMPARITOR,
-                self.token('=')) or \
-            self.construct(UnsupportedCQL("Unsupported Relation: >"),
-                self.token('>')) or \
-            self.construct(UnsupportedCQL("Unsupported Relation: <"),
-                self.token('<')) or \
-            self.construct(UnsupportedCQL("Unsupported Relation: >="),
-                self.token('>=')) or \
-            self.construct(UnsupportedCQL("Unsupported Relation: <="),
-                self.token('<=')) or \
-            self.construct(UnsupportedCQL("Unsupported Relation: <>"),
-                self.token('<>'))
+        if not self._tokens.hasNext():
+            return False
+        token = self._tokens.peek()
+        if token == '=':
+            return COMPARITOR(self._tokens.next())
+        if token in ['>', '<', '>=', '<=', '<>']:
+            raise UnsupportedCQL("Unsupported Relation: %s" % token)
+        return False
+            
             #this needs to be unparsable, not throw an exception.
             #self.construct(UnsupportedCQL("Unsupported Relation: namedComparitor"),
             #	self.term)
