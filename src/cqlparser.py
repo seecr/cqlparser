@@ -1,6 +1,6 @@
 ## begin license ##
 #
-#    CQLParser is parser that builts up a parsetree for the given CQL and 
+#    CQLParser is parser that builts up a parsetree for the given CQL and
 #    can convert this into other formats.
 #    Copyright (C) 2005-2007 Seek You Too B.V. (CQ2) http://www.cq2.nl
 #
@@ -40,10 +40,10 @@ class CQLAbstractSyntaxNode:
 
     def __eq__(self, other):
         return self.__class__ == other.__class__ and self._children == other._children
-    
+
     def children(self):
         return self._children
-    
+
 for aClass in ['CQL_QUERY', 'SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDEX', 'COMPARITOR']:
     exec("""class %s(CQLAbstractSyntaxNode):
     pass""" % aClass)
@@ -58,19 +58,19 @@ class Token:
         self._parser = parser
         self._token = token
         self._caseSensitive = caseSensitive
-    
+
     def __call__(self):
         #TODO refactor
         nextToken = self._parser._tokens.safeNext()
         if not nextToken:
             return False
-        
+
         if not self._caseSensitive:
             return nextToken.lower() == self._token.lower() and self._token.lower()
         if nextToken == self._token:
             return self._token
         return False
-    
+
 class CQLParser:
     def __init__(self, tokenstack):
         self._tokens = tokenstack
@@ -89,7 +89,7 @@ class CQLParser:
             result.append(term)
         self._tokens.dropBookmark()
         return result
-    
+
     def construct(self, constructor, *termFunctions):
         result = self.tryTerms(*termFunctions)
         if not result:
@@ -111,7 +111,7 @@ class CQLParser:
 
     def token(self, aToken, caseSensitive = True):
         return Token(self, aToken, caseSensitive)
-    
+
     def parse(self):
         result = self.cqlQuery()
         if self._tokens.hasNext():
@@ -129,7 +129,7 @@ class CQLParser:
                     self.cqlQuery)
         return \
             self.construct(CQL_QUERY,
-                self.scopedClause)	
+                self.scopedClause)
 
     def prefixAssignment(self):
         """prefixAssignment ::= '>' prefix '=' uri | '>' uri"""
@@ -142,7 +142,7 @@ class CQLParser:
             self.construct(UnsupportedCQL("prefixAssignment (>)"),
                 self.token('>'),
                 self.uri)
-                
+
     def scopedClause(self):
         """
         scopedClause ::= scopedClause booleanGroup searchClause | searchClause
@@ -150,7 +150,7 @@ class CQLParser:
         scopedClause ::= searchClause booleanGroup scopedClause | searchClause
         """
         #searchClause = self.searchClause()
-        
+
         head = self.tryTerms(self.searchClause)
         if not head:
             return False
@@ -160,7 +160,7 @@ class CQLParser:
         if tail:
             return SCOPED_CLAUSE(*(head + tail))
         return SCOPED_CLAUSE(*head)
-    
+
     def boolean(self):
         """boolean ::= 'and' | 'or' | 'not' | 'prox'"""
         if not self._tokens.hasNext():
@@ -171,7 +171,7 @@ class CQLParser:
         if token in ['and', 'or', 'not']:
             return BOOLEAN(self._tokens.next().lower())
         return False
-    
+
     def booleanGroup(self):
         """
         booleanGroup ::= boolean [ modifierList ]
@@ -188,14 +188,14 @@ class CQLParser:
         if tail:
             raise UnsupportedCQL("modifierLists are not supported")
         return head[0]
-    
+
     def modifierList(self):
         return self.token('/')()
 
     def searchClause(self):
         """
         searchClause ::=
-            '(' cqlQuery ')' | 
+            '(' cqlQuery ')' |
             index relation searchTerm |
             searchTerm
         """
@@ -216,7 +216,7 @@ class CQLParser:
         if tail:
             return SEARCH_CLAUSE(*([INDEX(term) for term in head] + tail))
         return SEARCH_CLAUSE(*[SEARCH_TERM(term) for term in head])
-                
+
     def relation(self):
         """
         relation ::= comparitor [modifierList]
@@ -233,7 +233,7 @@ class CQLParser:
         return \
             self.construct(lambda x: x,
                 self.comparitor)
-        
+
     def comparitor(self):
         """
         comparitor ::= comparitorSymbol | namedComparitor
@@ -248,8 +248,19 @@ class CQLParser:
         if token in ['>', '<', '>=', '<=', '<>']:
             raise UnsupportedCQL("Unsupported Relation: %s" % token)
         return False
-            
+
             #this needs to be unparsable, not throw an exception.
             #self.construct(UnsupportedCQL("Unsupported Relation: namedComparitor"),
             #	self.term)
-        
+
+    def modifierList(self):
+        """
+        modifierList ::=  modifierList modifier | modifier
+        """
+        pass
+
+    def modifer(self):
+        """
+        modifier ::= '/' modifierName [comparitorSymbol modifierValue]
+        """
+        pass
