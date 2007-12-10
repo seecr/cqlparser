@@ -89,13 +89,13 @@ class CQLParserTest(unittest.TestCase):
         SC = SCOPED_CLAUSE
         SE = SEARCH_CLAUSE
         T = SEARCH_TERM
-        self.assertEquals(Q(SC(SE(INDEX('field0'), RELATION(COMPARITOR('any'), MODIFIER("boost", "=", "1.5")), T('value')))), parseString("field0 any/boost=1.5 value"))
+        self.assertEquals(Q(SC(SE(INDEX('field0'), RELATION(COMPARITOR('='), MODIFIER("boost", "=", "1.5")), T('value')))), parseString("field0 =/boost=1.5 value"))
 
     def testInvalidModifiers(self):
-        self.assertException(CQLParseException, 'field0 any /')
-        self.assertException(UnsupportedCQL, 'field0 any /field0')
-        self.assertException(CQLParseException, 'field0 any /field0=')
-        self.assertException(UnsupportedCQL, 'field0 any /field0>10')
+        self.assertException(CQLParseException, 'field0 =/')
+        self.assertException(UnsupportedCQL, 'field0 =/field0')
+        self.assertException(CQLParseException, 'field0 =/field0=')
+        self.assertException(UnsupportedCQL, 'field0 =/field0>10')
 
     ### Helper methods
     def assertException(self, exceptionClass, queryString):

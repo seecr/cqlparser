@@ -220,16 +220,14 @@ class CQLParser:
         we use:
         relation ::= comparitor modifierList | comparitor
         """
-        if not self._tokens.hasNext():
+        comparitor = self.comparitor()
+        if not comparitor:
             return False
-        if self._tokens.peek() == "any":
-            return \
-                self.construct(RELATION,
-                    self.comparitor,
-                    self.modifierList)
-        return \
-            self.construct(RELATION,
-                self.comparitor)
+        if self._tokens.safePeek() == '/':
+            modifierList = self.modifierList()
+            return RELATION(comparitor, modifierList)
+
+        return RELATION(comparitor)
 
 
 
