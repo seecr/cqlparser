@@ -44,7 +44,7 @@ class CQLAbstractSyntaxNode:
     def children(self):
         return self._children
 
-for aClass in ['CQL_QUERY', 'SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDEX', 'COMPARITOR']:
+for aClass in ['CQL_QUERY', 'SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDEX', 'RELATION', 'COMPARITOR', 'MODIFIER']:
     exec("""class %s(CQLAbstractSyntaxNode):
     pass""" % aClass)
 
@@ -186,11 +186,8 @@ class CQLParser:
             return False
         tail = self.tryTerms(self.modifierList)
         if tail:
-            raise UnsupportedCQL("modifierLists are not supported")
+            raise UnsupportedCQL("modifierLists on booleanGroups not supported")
         return head[0]
-
-    def modifierList(self):
-        return self.token('/')()
 
     def searchClause(self):
         """
@@ -225,14 +222,16 @@ class CQLParser:
         """
         if not self._tokens.hasNext():
             return False
-        if self._tokens.peek() == "/":
+        if self._tokens.peek() == "any":
             return \
-                self.construct(UnsupportedCQL("modifierLists are not supported"),
+                self.construct(RELATION,
                     self.comparitor,
                     self.modifierList)
         return \
-            self.construct(lambda x: x,
+            self.construct(RELATION,
                 self.comparitor)
+
+
 
     def comparitor(self):
         """
@@ -245,22 +244,40 @@ class CQLParser:
         token = self._tokens.peek()
         if token == '=':
             return COMPARITOR(self._tokens.next())
+        if token.lower() == 'any':
+            return COMPARITOR(self._tokens.next())
         if token in ['>', '<', '>=', '<=', '<>']:
-            raise UnsupportedCQL("Unsupported Relation: %s" % token)
+            raise UnsupportedCQL("Unsupported ComparitorSymbol: %s" % token)
+        #this is a bit of a footnote at the definition of charString1 and defines the term "identifier" (namedComparitor is an identifier)
         return False
-
-            #this needs to be unparsable, not throw an exception.
-            #self.construct(UnsupportedCQL("Unsupported Relation: namedComparitor"),
-            #	self.term)
 
     def modifierList(self):
         """
         modifierList ::=  modifierList modifier | modifier
-        """
-        pass
-
-    def modifer(self):
-        """
         modifier ::= '/' modifierName [comparitorSymbol modifierValue]
+        we disallow modifierLists with more then one modifier.
         """
-        pass
+        token = self._tokens.safeNext()
+        if not token == '/':
+            return False
+        modifierName = self.modifierName() #term
+        if not modifierName:
+            raise CQLParseException('Invalid CQL')
+
+        token = self._tokens.safePeek()
+        if token == '=':
+            comparitorSymbol = self._tokens.next()
+        else:
+            raise UnsupportedCQL("Unsupported ComparitorSymbol: %s" % token)
+
+        modifierValue = self.modifierValue() #term
+        if not modifierValue:
+            raise CQLParseException('Invalid CQL')
+
+        return MODIFIER(modifierName, comparitorSymbol, modifierValue)
+
+
+"""
+relation: modifierList
+dc.title any /boost=5   als enige mogelijk
+"""

@@ -25,7 +25,7 @@
 import unittest
 
 from cqlparser import CQLParser, parseString, \
-    CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, COMPARITOR, UnsupportedCQL, CQLParseException
+    CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, MODIFIER, UnsupportedCQL, CQLParseException
 
 class CQLParserTest(unittest.TestCase):
     """http://www.loc.gov/standards/sru/sru1-1archive/cql.html"""
@@ -57,7 +57,6 @@ class CQLParserTest(unittest.TestCase):
     def testIllegalBooleanGroups(self):
         self.assertException(CQLParseException, 'term notanyof_and_or_not_prox term2')
         self.assertException(UnsupportedCQL, 'term prox term2')
-        self.assertException(UnsupportedCQL, 'term and / aModifierName term2')
 
     def testParentheses(self):
         Q = CQL_QUERY
@@ -80,9 +79,23 @@ class CQLParserTest(unittest.TestCase):
         SC = SCOPED_CLAUSE
         SE = SEARCH_CLAUSE
         T = SEARCH_TERM
-        self.assertEquals(Q(SC(SE(INDEX('field1'), COMPARITOR('='), T('200')))), parseString('field1 = 200'))
+        R = RELATION
+        self.assertEquals(Q(SC(SE(INDEX('field1'), R(COMPARITOR('=')), T('200')))), parseString('field1 = 200'))
         for comparitor in ['>', '<', '>=', '<=', '<>']:
             self.assertException(UnsupportedCQL, 'field1 %s 200' % comparitor)
+
+    def testModifiers(self):
+        Q = CQL_QUERY
+        SC = SCOPED_CLAUSE
+        SE = SEARCH_CLAUSE
+        T = SEARCH_TERM
+        self.assertEquals(Q(SC(SE(INDEX('field0'), RELATION(COMPARITOR('any'), MODIFIER("boost", "=", "1.5")), T('value')))), parseString("field0 any/boost=1.5 value"))
+
+    def testInvalidModifiers(self):
+        self.assertException(CQLParseException, 'field0 any /')
+        self.assertException(UnsupportedCQL, 'field0 any /field0')
+        self.assertException(CQLParseException, 'field0 any /field0=')
+        self.assertException(UnsupportedCQL, 'field0 any /field0>10')
 
     ### Helper methods
     def assertException(self, exceptionClass, queryString):
