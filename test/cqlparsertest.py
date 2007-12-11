@@ -93,9 +93,11 @@ class CQLParserTest(unittest.TestCase):
 
     def testInvalidModifiers(self):
         self.assertException(CQLParseException, 'field0 =/')
-        self.assertException(UnsupportedCQL, 'field0 =/field0')
-        self.assertException(CQLParseException, 'field0 =/field0=')
-        self.assertException(UnsupportedCQL, 'field0 =/field0>10')
+        self.assertException(UnsupportedCQL, 'field0 =/boost')
+        self.assertException(CQLParseException, 'field0 =/boost=')
+        self.assertException(UnsupportedCQL, 'field0 =/boost>10')
+        self.assertException(UnsupportedCQL, 'field0 =/boost=aap value')
+        self.assertException(UnsupportedCQL, 'field0 =/not_boost=1.0 value')
 
     ### Helper methods
     def assertException(self, exceptionClass, queryString):

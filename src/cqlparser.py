@@ -249,6 +249,9 @@ class CQLParser:
         #this is a bit of a footnote at the definition of charString1 and defines the term "identifier" (namedComparitor is an identifier)
         return False
 
+    def _isfloat(self, s):
+        return s.replace('.', '', 1).isdigit()
+
     def modifierList(self):
         """
         modifierList ::=  modifierList modifier | modifier
@@ -261,6 +264,8 @@ class CQLParser:
         modifierName = self.modifierName() #term
         if not modifierName:
             raise CQLParseException('Invalid CQL')
+        if modifierName != "boost":
+            raise UnsupportedCQL('Only "boost" allowed as modifier')
 
         token = self._tokens.safePeek()
         if token == '=':
@@ -271,6 +276,8 @@ class CQLParser:
         modifierValue = self.modifierValue() #term
         if not modifierValue:
             raise CQLParseException('Invalid CQL')
+        if not self._isfloat(modifierValue):
+            raise UnsupportedCQL("Modifiervalue should be a number")
 
         return MODIFIER(modifierName, comparitorSymbol, modifierValue)
 
