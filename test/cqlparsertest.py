@@ -91,6 +91,14 @@ class CQLParserTest(unittest.TestCase):
         T = SEARCH_TERM
         self.assertEquals(Q(SC(SE(INDEX('field0'), RELATION(COMPARITOR('='), MODIFIER("boost", "=", "1.5")), T('value')))), parseString("field0 =/boost=1.5 value"))
 
+    def testIndexRelationExactSearchTerm(self):
+        Q = CQL_QUERY
+        SC = SCOPED_CLAUSE
+        SE = SEARCH_CLAUSE
+        T = SEARCH_TERM
+        R = RELATION
+        self.assertEquals(Q(SC(SE(INDEX('field1'), R(COMPARITOR('exact')), T('200')))), parseString('field1 exact 200'))
+
     def testInvalidModifiers(self):
         self.assertException(CQLParseException, 'field0 =/')
         self.assertException(UnsupportedCQL, 'field0 =/boost')

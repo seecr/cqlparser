@@ -242,7 +242,7 @@ class CQLParser:
         token = self._tokens.peek()
         if token == '=':
             return COMPARITOR(self._tokens.next())
-        if token.lower() == 'any':
+        if token.lower() in ['any', 'exact']:
             return COMPARITOR(self._tokens.next())
         if token in ['>', '<', '>=', '<=', '<>']:
             raise UnsupportedCQL("Unsupported ComparitorSymbol: %s" % token)
