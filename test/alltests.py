@@ -23,10 +23,14 @@
 #
 ## end license ##
 
-import os, sys
-os.system('rm -f *.pyc')
-
-sys.path.insert(0, '../src')
+from sys import path
+from os import system, listdir
+from os.path import isdir, join
+system("find .. -name '*.pyc' | xargs rm -f")
+if isdir('../deps.d'):
+    for d in listdir('../deps.d'):
+        path.insert(0, join('../deps.d', d))
+path.insert(0, '..')
 
 import unittest
 
