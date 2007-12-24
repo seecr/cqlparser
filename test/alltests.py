@@ -39,5 +39,5 @@ from cqltokenizertest import CQLTokenizerTest
 from cqlcomposertest import CQLComposerTest
 
 if __name__ == '__main__':
-	unittest.main()
+    unittest.main()
 

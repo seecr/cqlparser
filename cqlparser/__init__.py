@@ -1,4 +1,3 @@
-from cqlparser import parseString, CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, COMPARITOR, UnsupportedCQL, CQLParseException
 ## begin license ##
 #
 #    CQLParser is parser that builts up a parsetree for the given CQL and 
@@ -22,3 +21,4 @@ from cqlparser import parseString, CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOL
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
+from cqlparser import parseString, CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, COMPARITOR, UnsupportedCQL, CQLParseException

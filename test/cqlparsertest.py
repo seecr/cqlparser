@@ -24,7 +24,7 @@
 
 import unittest
 
-from cqlparser import CQLParser, parseString, \
+from cqlparser.cqlparser import CQLParser, parseString, \
     CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, MODIFIER, UnsupportedCQL, CQLParseException
 
 class CQLParserTest(unittest.TestCase):
