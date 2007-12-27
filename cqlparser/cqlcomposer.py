@@ -26,6 +26,7 @@ from cqlparser import parseString, CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOL
 class ParseException(Exception):
     pass
 
+# REWRITE using CqlVisitor (left as an exercise to ther reader ;-)
 def compose(node):
     if node.__class__ in [INDEX]:
         assert len(node.children()) == 1

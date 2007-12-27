@@ -1,6 +1,6 @@
 ## begin license ##
 #
-#    CQLParser is parser that builts up a parsetree for the given CQL and 
+#    CQLParser is parser that builts up a parsetree for the given CQL and
 #    can convert this into other formats.
 #    Copyright (C) 2005-2007 Seek You Too B.V. (CQ2) http://www.cq2.nl
 #
@@ -22,3 +22,4 @@
 #
 ## end license ##
 from cqlparser import parseString, CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, COMPARITOR, UnsupportedCQL, CQLParseException
+from cqlvisitor import CqlVisitor
