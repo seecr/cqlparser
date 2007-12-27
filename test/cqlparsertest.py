@@ -23,7 +23,7 @@
 ## end license ##
 
 import unittest
-
+from cq2utils import CallTrace
 from cqlparser.cqlparser import CQLParser, parseString, \
     CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, MODIFIER, UnsupportedCQL, CQLParseException
 
@@ -106,6 +106,17 @@ class CQLParserTest(unittest.TestCase):
         self.assertException(UnsupportedCQL, 'field0 =/boost>10')
         self.assertException(UnsupportedCQL, 'field0 =/boost=aap value')
         self.assertException(UnsupportedCQL, 'field0 =/not_boost=1.0 value')
+
+    def testAcceptVisitor(self):
+        q = CQL_QUERY(None)
+        c = COMPARITOR('=')
+        mockVisitor = CallTrace('visitor')
+        q.accept(mockVisitor)
+        self.assertEquals('visitCQL_QUERY', mockVisitor.calledMethods[0].name)
+        self.assertEquals(q, mockVisitor.calledMethods[0].args[0])
+        c.accept(mockVisitor)
+        self.assertEquals('visitCOMPARITOR', mockVisitor.calledMethods[1].name)
+        self.assertEquals(c, mockVisitor.calledMethods[1].args[0])
 
     ### Helper methods
     def assertException(self, exceptionClass, queryString):

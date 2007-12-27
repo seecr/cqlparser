@@ -29,7 +29,7 @@ class UnsupportedCQL(Exception):
 class CQLParseException(Exception):
     pass
 
-class CQLAbstractSyntaxNode:
+class CQLAbstractSyntaxNode(object):
 
     def __init__(self, *args):
         self._children = args
@@ -46,7 +46,9 @@ class CQLAbstractSyntaxNode:
 
 for aClass in ['CQL_QUERY', 'SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDEX', 'RELATION', 'COMPARITOR', 'MODIFIER']:
     exec("""class %s(CQLAbstractSyntaxNode):
-    pass""" % aClass)
+    def accept(self, visitor):
+        visitor.visit%s(self)
+""" % (aClass, aClass))
 
 def parseString(cqlString):
     from cqltokenizer import tokenStack
