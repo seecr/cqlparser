@@ -47,7 +47,7 @@ class CQLAbstractSyntaxNode(object):
 for aClass in ['CQL_QUERY', 'SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDEX', 'RELATION', 'COMPARITOR', 'MODIFIER']:
     exec("""class %s(CQLAbstractSyntaxNode):
     def accept(self, visitor):
-        visitor.visit%s(self)
+        return visitor.visit%s(self)
 """ % (aClass, aClass))
 
 def parseString(cqlString):

@@ -118,6 +118,12 @@ class CQLParserTest(unittest.TestCase):
         self.assertEquals('visitCOMPARITOR', mockVisitor.calledMethods[1].name)
         self.assertEquals(c, mockVisitor.calledMethods[1].args[0])
 
+    def testVisitReturnValue(self):
+        q = CQL_QUERY(None)
+        mockVisitor = CallTrace('visitor', returnValues = {'visitCQL_QUERY': 'nut'})
+        value = q.accept(mockVisitor)
+        self.assertEquals('nut', value)
+
     ### Helper methods
     def assertException(self, exceptionClass, queryString):
         try:
