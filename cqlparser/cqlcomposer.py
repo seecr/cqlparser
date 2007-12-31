@@ -21,7 +21,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from cqlparser import parseString, CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, UnsupportedCQL, CQLParseException
+from cqlparser import parseString, CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, TERM, UnsupportedCQL, CQLParseException
 
 class ParseException(Exception):
     pass
@@ -30,7 +30,7 @@ class ParseException(Exception):
 def compose(node):
     if node.__class__ in [INDEX]:
         assert len(node.children()) == 1
-        return node.children()[0]
+        return compose(node.children()[0])
     if node.__class__ in [SCOPED_CLAUSE, SEARCH_TERM, CQL_QUERY]:
         return " ".join(map(compose, node.children()))
     if node.__class__ == SEARCH_CLAUSE:
@@ -43,6 +43,8 @@ def compose(node):
         return node.children()[0]
     if node.__class__ == BOOLEAN:
         assert len(node.children()) == 1
+        return node.children()[0]
+    if node.__class__ == TERM:
         return node.children()[0]
     return str(node)
 
