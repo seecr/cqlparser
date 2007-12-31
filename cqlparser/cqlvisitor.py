@@ -30,8 +30,7 @@ class CqlVisitor(object):
         return self._root.accept(self)
 
     def visitChildren(self, node):
-        for child in node.children():
-            child.accept(self)
+        return tuple(child.accept(self) for child in node.children())
 
     def visitCQL_QUERY(self, node):
         assert len(node.children()) == 1
@@ -46,7 +45,7 @@ class CqlVisitor(object):
         return lhs, operator, rhs
 
     def visitSEARCH_CLAUSE(self, node):
-        self.visitChildren(node)
+        return self.visitChildren(node)
 
     def visitINDEX(self, node):
         assert len(node.children()) == 1

@@ -22,6 +22,8 @@
 #
 ## end license ##
 
+DEFAULTCOMPARITORS = ['=', '>', '<', '>=', '<=', '<>', '==', 'any', 'all', 'adj', 'within', 'encloses', 'exact']
+
 class UnsupportedCQL(Exception):
     def __call__(self, *ignoredArgs):
         raise self
@@ -33,10 +35,12 @@ class CQLAbstractSyntaxNode(object):
 
     def __init__(self, *args):
         self._children = args
-        self.__repr__ = self.__str__
+
+    def __repr__(self):
+        return self.__str__()
 
     def __str__(self):
-        return "%s(%s)" % (self.__class__, ", ".join(map(repr, self._children)))
+        return "%s(%s)" % (str(self.__class__).split('.')[-1], ", ".join(map(repr, self._children)))
 
     def __eq__(self, other):
         return self.__class__ == other.__class__ and self._children == other._children
@@ -44,15 +48,15 @@ class CQLAbstractSyntaxNode(object):
     def children(self):
         return self._children
 
-for aClass in ['CQL_QUERY', 'SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDEX', 'RELATION', 'COMPARITOR', 'MODIFIER']:
+for aClass in ['CQL_QUERY', 'SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDEX', 'RELATION', 'COMPARITOR', 'MODIFIERLIST', 'MODIFIER', 'TERM', 'IDENTIFIER']:
     exec("""class %s(CQLAbstractSyntaxNode):
     def accept(self, visitor):
         return visitor.visit%s(self)
 """ % (aClass, aClass))
 
-def parseString(cqlString):
+def parseString(cqlString, **kwargs):
     from cqltokenizer import tokenStack
-    parser = CQLParser(tokenStack(cqlString))
+    parser = CQLParser(tokenStack(cqlString), **kwargs)
     return parser.parse()
 
 class Token:
@@ -73,12 +77,19 @@ class Token:
             return self._token
         return False
 
+class WildCard:
+    def __contains__(self, item):
+        return True
+
 class CQLParser:
-    def __init__(self, tokenstack):
+    def __init__(self, tokenstack, supportedModifierNames=WildCard(),
+        supportedComparitors = DEFAULTCOMPARITORS):
         self._tokens = tokenstack
-        for term in ['prefix', 'uri', 'modifierName', 'modifierValue']:
+        for term in ['prefix', 'uri', 'modifierValue']:
             setattr(self, term, self.term)
             #(hoewel hier eigenlijk nog een veralgemeniseerde wrap laag omheen zou kunnen)
+        self.supportedComparitors = supportedComparitors
+        self.supportedModifierNames = supportedModifierNames
 
     def tryTerms(self, *termFunctions):
         result = []
@@ -101,7 +112,7 @@ class CQLParser:
     def term(self):
         token = self._tokens.safeNext()
         if token and (not token[:1] in ['(', ')', '>', '=', '<', '/']):
-            return token
+            return TERM(token)
         return False
 
     def searchTerm(self):
@@ -206,15 +217,13 @@ class CQLParser:
                     self.token('('),
                     self.cqlQuery,
                     self.token(')'))
-        head = self.tryTerms(self.term)
-        if not head:
-            return False
-        tail = self.tryTerms(
-                self.relation,
-                self.searchTerm)
-        if tail:
-            return SEARCH_CLAUSE(*([INDEX(term) for term in head] + tail))
-        return SEARCH_CLAUSE(*[SEARCH_TERM(term) for term in head])
+        result = self.construct(SEARCH_CLAUSE, self.index, self.relation, self.searchTerm)
+        if not result:
+            result = self.construct(SEARCH_CLAUSE, self.searchTerm)
+        #if tail:
+        #    return SEARCH_CLAUSE(*([INDEX(term) for term in head] + tail))
+        #return SEARCH_CLAUSE(*[SEARCH_TERM(term) for term in head])
+        return result
 
     def relation(self):
         """
@@ -231,7 +240,14 @@ class CQLParser:
 
         return RELATION(comparitor)
 
+    def modifierName(self):
+        if not self._tokens.hasNext():
+            return False
 
+        modifierName = self._tokens.next()
+        if modifierName not in self.supportedModifierNames:
+            raise UnsupportedCQL("Unsupported ModifierName: %s" % modifierName)
+        return TERM(modifierName)
 
     def comparitor(self):
         """
@@ -241,47 +257,27 @@ class CQLParser:
         """
         if not self._tokens.hasNext():
             return False
-        token = self._tokens.peek()
-        if token == '=':
-            return COMPARITOR(self._tokens.next())
-        if token.lower() in ['any', 'exact']:
-            return COMPARITOR(self._tokens.next())
-        if token in ['>', '<', '>=', '<=', '<>']:
-            raise UnsupportedCQL("Unsupported ComparitorSymbol: %s" % token)
-        #this is a bit of a footnote at the definition of charString1 and defines the term "identifier" (namedComparitor is an identifier)
-        return False
-
-    def _isfloat(self, s):
-        return s.replace('.', '', 1).isdigit()
+        token = self._tokens.peek().lower()
+        if not token in DEFAULTCOMPARITORS:
+            return False
+        if token not in self.supportedComparitors:
+            raise UnsupportedCQL('Unsupported comparitor: %s' % token)
+        return COMPARITOR(self._tokens.next())
 
     def modifierList(self):
         """
         modifierList ::=  modifierList modifier | modifier
-        modifier ::= '/' modifierName [comparitorSymbol modifierValue]
-        we disallow modifierLists with more then one modifier.
         """
-        token = self._tokens.safeNext()
-        if not token == '/':
+        return self.construct(MODIFIERLIST, self.modifier)
+
+    def modifier(self):
+        """
+        modifier ::= '/' modifierName [comparitorSymbol modifierValue]
+        """
+        slashToken = self._tokens.safeNext()
+        if not slashToken == '/':
             return False
-        modifierName = self.modifierName() #term
-        if not modifierName:
-            raise CQLParseException('Invalid CQL')
-        if modifierName != "boost":
-            raise UnsupportedCQL('Only "boost" allowed as modifier')
-
-        token = self._tokens.safePeek()
-        if token == '=':
-            comparitorSymbol = self._tokens.next()
-        else:
-            raise UnsupportedCQL("Unsupported ComparitorSymbol: %s" % token)
-
-        modifierValue = self.modifierValue() #term
-        if not modifierValue:
-            raise CQLParseException('Invalid CQL')
-        if not self._isfloat(modifierValue):
-            raise UnsupportedCQL("Modifiervalue should be a number")
-
-        return MODIFIER(modifierName, comparitorSymbol, modifierValue)
+        return self.construct(MODIFIER, self.modifierName, self.comparitor, self.modifierValue)
 
 
 """

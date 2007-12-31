@@ -25,27 +25,27 @@
 import unittest
 from cq2utils import CallTrace
 from cqlparser.cqlparser import CQLParser, parseString, \
-    CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, MODIFIER, UnsupportedCQL, CQLParseException
+    CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, MODIFIERLIST, MODIFIER, TERM, IDENTIFIER, UnsupportedCQL, CQLParseException
 
 class CQLParserTest(unittest.TestCase):
     """http://www.loc.gov/standards/sru/sru1-1archive/cql.html"""
 
     def testOneTerm(self):
-        self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM('term')))), parseString('term'))
-        self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM('"white space"')))), parseString('"white space"'))
+        self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))))), parseString('term'))
+        self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('"white space"'))))), parseString('"white space"'))
 
     def testTwoTerms(self):
         self.assertEquals(
             CQL_QUERY(SCOPED_CLAUSE(
-                SEARCH_CLAUSE(SEARCH_TERM('term')), BOOLEAN('and'),
-                    SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM('term2'))))),
+                SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))), BOOLEAN('and'),
+                    SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term2')))))),
             parseString('term and term2'))
 
     def testBooleansAreCaseInsensitive(self):
         self.assertEquals(
             CQL_QUERY(SCOPED_CLAUSE(
-                SEARCH_CLAUSE(SEARCH_TERM('term')), BOOLEAN('and'),
-                    SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM('term2'))))),
+                SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))), BOOLEAN('and'),
+                    SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term2')))))),
             parseString('term AnD term2'))
 
     def testPrefixesAreIllegal(self):
@@ -62,11 +62,12 @@ class CQLParserTest(unittest.TestCase):
         Q = CQL_QUERY
         SC = SCOPED_CLAUSE
         SE = SEARCH_CLAUSE
-        T = SEARCH_TERM
-        self.assertEquals(Q(SC(SE("(", Q(SC(SE(T('term')))), ")"))), parseString('(term)'))
-        self.assertEquals(Q(SC(SE("(", Q(SC(SE("(", Q(SC(SE(T('term')))), ")"))), ")"))), parseString('((term))'))
+        ST = SEARCH_TERM
+        T = TERM
+        self.assertEquals(Q(SC(SE("(", Q(SC(SE(ST(T('term'))))), ")"))), parseString('(term)'))
+        self.assertEquals(Q(SC(SE("(", Q(SC(SE("(", Q(SC(SE(ST(T('term'))))), ")"))), ")"))), parseString('((term))'))
 
-        self.assertEquals(Q(SC(SE("(", Q(SC(SE(T('term')), BOOLEAN('and'), SC(SE(T('term2'))))), ")"))), parseString('(term and term2)'))
+        self.assertEquals(Q(SC(SE("(", Q(SC(SE(ST(T('term'))), BOOLEAN('and'), SC(SE(ST(T('term2')))))), ")"))), parseString('(term and term2)'))
 
         self.assertException(CQLParseException, '(term')
         self.assertException(CQLParseException, '(term term2')
@@ -78,34 +79,36 @@ class CQLParserTest(unittest.TestCase):
         Q = CQL_QUERY
         SC = SCOPED_CLAUSE
         SE = SEARCH_CLAUSE
-        T = SEARCH_TERM
+        ST = SEARCH_TERM
+        T = TERM
         R = RELATION
-        self.assertEquals(Q(SC(SE(INDEX('field1'), R(COMPARITOR('=')), T('200')))), parseString('field1 = 200'))
+        self.assertEquals(Q(SC(SE(INDEX(T('field1')), R(COMPARITOR('=')), ST(T('200'))))), parseString('field1 = 200'))
         for comparitor in ['>', '<', '>=', '<=', '<>']:
-            self.assertException(UnsupportedCQL, 'field1 %s 200' % comparitor)
+            self.assertException(UnsupportedCQL, 'field1 %s 200' % comparitor, supportedComparitors=['='])
 
     def testModifiers(self):
         Q = CQL_QUERY
         SC = SCOPED_CLAUSE
         SE = SEARCH_CLAUSE
-        T = SEARCH_TERM
-        self.assertEquals(Q(SC(SE(INDEX('field0'), RELATION(COMPARITOR('='), MODIFIER("boost", "=", "1.5")), T('value')))), parseString("field0 =/boost=1.5 value"))
+        ST = SEARCH_TERM
+        T = TERM
+        self.assertEquals(Q(SC(SE(INDEX(T('field0')), RELATION(COMPARITOR('='), MODIFIERLIST(MODIFIER(T("boost"), COMPARITOR("="), T("1.5")))), ST(T('value'))))), parseString("field0 =/boost=1.5 value"))
 
     def testIndexRelationExactSearchTerm(self):
         Q = CQL_QUERY
         SC = SCOPED_CLAUSE
         SE = SEARCH_CLAUSE
-        T = SEARCH_TERM
+        ST = SEARCH_TERM
+        T = TERM
         R = RELATION
-        self.assertEquals(Q(SC(SE(INDEX('field1'), R(COMPARITOR('exact')), T('200')))), parseString('field1 exact 200'))
+        self.assertEquals(Q(SC(SE(INDEX(T('field1')), R(COMPARITOR('exact')), ST(T('200'))))), parseString('field1 exact 200'))
 
     def testInvalidModifiers(self):
         self.assertException(CQLParseException, 'field0 =/')
-        self.assertException(UnsupportedCQL, 'field0 =/boost')
+        self.assertException(CQLParseException, 'field0 =/boost')
         self.assertException(CQLParseException, 'field0 =/boost=')
-        self.assertException(UnsupportedCQL, 'field0 =/boost>10')
-        self.assertException(UnsupportedCQL, 'field0 =/boost=aap value')
-        self.assertException(UnsupportedCQL, 'field0 =/not_boost=1.0 value')
+        self.assertException(CQLParseException, 'field0 =/boost>10')
+        self.assertException(UnsupportedCQL, 'field0 =/not_boost=1.0 value', supportedModifierNames=['aap'])
 
     def testAcceptVisitor(self):
         q = CQL_QUERY(None)
@@ -125,9 +128,9 @@ class CQLParserTest(unittest.TestCase):
         self.assertEquals('nut', value)
 
     ### Helper methods
-    def assertException(self, exceptionClass, queryString):
+    def assertException(self, exceptionClass, queryString, **kwargs):
         try:
-            parseString(queryString)
+            parseString(queryString, **kwargs)
             self.fail()
         except exceptionClass, e:
             pass
