@@ -34,42 +34,31 @@ class CqlVisitor(object):
 
     def visitCQL_QUERY(self, node):
         assert len(node.children()) == 1
-        return node.children()[0].accept(self)
+        return self.visitChildren(node)
 
     def visitSCOPED_CLAUSE(self, node):
-        if len(node.children()) == 1:
-            return node.children()[0].accept(self)
-        lhs = node.children()[0].accept(self)
-        operator = node.children()[1].accept(self)
-        rhs = node.children()[2].accept(self)
-        return lhs, operator, rhs
+        return self.visitChildren(node)
 
     def visitSEARCH_CLAUSE(self, node):
         return self.visitChildren(node)
 
     def visitINDEX(self, node):
         assert len(node.children()) == 1
-        return node.children()[0]
+        return self.visitChildren(node)
 
     def visitRELATION(self, node):
-        if len(node.children()) == 1:
-            return node.children()[0].accept(self), '', ''
-        assert len(node.children()) == 2
-        relation = node.children()[0].accept(self)
-        modifier, value = node.children()[1].accept(self)
-        return relation, modifier, value
+        return self.visitChildren(node)
+
+    def visitMODIFIERLIST(self, node):
+        return self.visitChildren(node)
 
     def visitMODIFIER(self, node):
         assert len(node.children()) == 3
-        name = node.children()[0]
-        comparitor = node.children()[1]
-        assert comparitor == "="
-        value = node.children()[2]
-        return name, value
+        return self.visitChildren(node)
 
+    # TERMINALS
     def visitCOMPARITOR(self, node):
         assert len(node.children()) == 1
-        assert node.children()[0] in ['=', 'exact']
         return node.children()[0]
 
     def visitBOOLEAN(self, node):
@@ -78,7 +67,10 @@ class CqlVisitor(object):
 
     def visitSEARCH_TERM(self, node):
         assert len(node.children()) == 1
-        term = str(node.children()[0])
+        term = node.children()[0].accept(self)
         if term[0] == '"':
-            return term[1:-1] #.replace(r'\"', '"')
+            return term[1: -1] #.replace(r'\"', '"')
         return term
+
+    def visitTERM(self, node):
+        return node.children()[0]

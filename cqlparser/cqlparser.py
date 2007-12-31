@@ -40,7 +40,7 @@ class CQLAbstractSyntaxNode(object):
         return self.__str__()
 
     def __str__(self):
-        return "%s(%s)" % (str(self.__class__).split('.')[-1], ", ".join(map(repr, self._children)))
+        return "%s(%s)" % (str(self.__class__).split('.')[-1][:-2], ", ".join(map(repr, self._children)))
 
     def __eq__(self, other):
         return self.__class__ == other.__class__ and self._children == other._children
@@ -220,9 +220,6 @@ class CQLParser:
         result = self.construct(SEARCH_CLAUSE, self.index, self.relation, self.searchTerm)
         if not result:
             result = self.construct(SEARCH_CLAUSE, self.searchTerm)
-        #if tail:
-        #    return SEARCH_CLAUSE(*([INDEX(term) for term in head] + tail))
-        #return SEARCH_CLAUSE(*[SEARCH_TERM(term) for term in head])
         return result
 
     def relation(self):
@@ -278,9 +275,3 @@ class CQLParser:
         if not slashToken == '/':
             return False
         return self.construct(MODIFIER, self.modifierName, self.comparitor, self.modifierValue)
-
-
-"""
-relation: modifierList
-dc.title any /boost=5   als enige mogelijk
-"""
