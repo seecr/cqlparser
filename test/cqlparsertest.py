@@ -30,6 +30,9 @@ from cqlparser.cqlparser import CQLParser, parseString, \
 class CQLParserTest(unittest.TestCase):
     """http://www.loc.gov/standards/sru/sru1-1archive/cql.html"""
 
+    def testNoTerms(self):
+        self.assertException(CQLParseException, '')
+
     def testOneTerm(self):
         self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))))), parseString('term'))
         self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('"white space"'))))), parseString('"white space"'))

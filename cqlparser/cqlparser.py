@@ -85,13 +85,21 @@ class CQLParser:
     def __init__(self, tokenstack, supportedModifierNames=WildCard(),
         supportedComparitors = DEFAULTCOMPARITORS):
         self._tokens = tokenstack
-        for term in ['prefix', 'uri', 'modifierValue']:
-            setattr(self, term, self.term)
+        for term in ['_prefix', '_uri', '_modifierValue']:
+            setattr(self, term, self._term)
             #(hoewel hier eigenlijk nog een veralgemeniseerde wrap laag omheen zou kunnen)
-        self.supportedComparitors = supportedComparitors
-        self.supportedModifierNames = supportedModifierNames
+        self._supportedComparitors = supportedComparitors
+        self._supportedModifierNames = supportedModifierNames
 
-    def tryTerms(self, *termFunctions):
+    def parse(self):
+        if not self._tokens.hasNext():
+            raise CQLParseException('No tokens found, at least one token expected.')
+        result = self._cqlQuery()
+        if self._tokens.hasNext():
+            raise CQLParseException('Unexpected token after parsing ([%s], %s).' % (self._tokens.next(), str(result)))
+        return result
+
+    def _tryTerms(self, *termFunctions):
         result = []
         self._tokens.bookmark()
         for termFunction in termFunctions:
@@ -103,60 +111,52 @@ class CQLParser:
         self._tokens.dropBookmark()
         return result
 
-    def construct(self, constructor, *termFunctions):
-        result = self.tryTerms(*termFunctions)
+    def _construct(self, constructor, *termFunctions):
+        result = self._tryTerms(*termFunctions)
         if not result:
             return False
         return constructor(*result)
 
-    def term(self):
+    def _term(self):
         token = self._tokens.safeNext()
         if token and (not token[:1] in ['(', ')', '>', '=', '<', '/']):
             return TERM(token)
         return False
 
-    def searchTerm(self):
-        return self.construct(SEARCH_TERM, self.term)
+    def _searchTerm(self):
+        return self._construct(SEARCH_TERM, self._term)
 
-    def index(self):
+    def _index(self):
         """index ::= term"""
-        return self.construct(INDEX, self.term)
+        return self._construct(INDEX, self._term)
 
-    def token(self, aToken, caseSensitive = True):
+    def _token(self, aToken, caseSensitive = True):
         return Token(self, aToken, caseSensitive)
 
-    def parse(self):
-        result = self.cqlQuery()
-        if self._tokens.hasNext():
-            raise CQLParseException('Unexpected token after parsing, check parser for greediness ([%s], %s).' % (self._tokens.next(), str(result)))
-        return result
-
-    def cqlQuery(self):
+    def _cqlQuery(self):
         """cqlQuery ::= prefixAssignment cqlQuery | scopedClause"""
-        if not self._tokens.hasNext():
-            return False
         if self._tokens.peek() == ">":
             return \
-                self.construct(CQL_QUERY,
-                    self.prefixAssignment,
-                    self.cqlQuery)
+                self._construct(CQL_QUERY,
+                    self._prefixAssignment,
+                    self._cqlQuery)
         return \
-            self.construct(CQL_QUERY,
-                self.scopedClause)
+            self._construct(CQL_QUERY,
+                self._scopedClause)
 
-    def prefixAssignment(self):
+    def _prefixAssignment(self):
         """prefixAssignment ::= '>' prefix '=' uri | '>' uri"""
         return \
-            self.construct(UnsupportedCQL("prefixAssignment (>)"),
-                self.token('>'),
-                self.prefix,
-                self.token('='),
-                self.uri) or \
-            self.construct(UnsupportedCQL("prefixAssignment (>)"),
-                self.token('>'),
-                self.uri)
+            self._construct(UnsupportedCQL("prefixAssignment (>)"),
+                self._token('>'),
+                self._prefix,
+                self._token('='),
+                self._uri) or \
+            self._construct(UnsupportedCQL("prefixAssignment (>)"),
+                self._token('>'),
+                self._uri)
 
-    def scopedClause(self):
+    def _scopedClause(self):
         """
         scopedClause ::= scopedClause booleanGroup searchClause | searchClause
         we use:
@@ -164,17 +164,17 @@ class CQLParser:
         """
         #searchClause = self.searchClause()
 
-        head = self.tryTerms(self.searchClause)
+        head = self._tryTerms(self._searchClause)
         if not head:
             return False
-        tail = self.tryTerms(
-                self.booleanGroup,
-                self.scopedClause)
+        tail = self._tryTerms(
+                self._booleanGroup,
+                self._scopedClause)
         if tail:
             return SCOPED_CLAUSE(*(head + tail))
         return SCOPED_CLAUSE(*head)
 
-    def boolean(self):
+    def _boolean(self):
         """boolean ::= 'and' | 'or' | 'not' | 'prox'"""
         if not self._tokens.hasNext():
             return False
@@ -185,7 +185,7 @@ class CQLParser:
             return BOOLEAN(self._tokens.next().lower())
         return False
 
-    def booleanGroup(self):
+    def _booleanGroup(self):
         """
         booleanGroup ::= boolean [ modifierList ]
         we use:
@@ -194,15 +194,15 @@ class CQLParser:
         #head = self.
         if not self._tokens.hasNext():
             return False
-        head = self.tryTerms(self.boolean)
+        head = self._tryTerms(self._boolean)
         if not head:
             return False
-        tail = self.tryTerms(self.modifierList)
+        tail = self._tryTerms(self._modifierList)
         if tail:
             raise UnsupportedCQL("modifierLists on booleanGroups not supported")
         return head[0]
 
-    def searchClause(self):
+    def _searchClause(self):
         """
         searchClause ::=
             '(' cqlQuery ')' |
@@ -213,40 +213,40 @@ class CQLParser:
             return False
         if self._tokens.peek() == "(":
             return \
-                self.construct(SEARCH_CLAUSE,
-                    self.token('('),
-                    self.cqlQuery,
-                    self.token(')'))
-        result = self.construct(SEARCH_CLAUSE, self.index, self.relation, self.searchTerm)
+                self._construct(SEARCH_CLAUSE,
+                    self._token('('),
+                    self._cqlQuery,
+                    self._token(')'))
+        result = self._construct(SEARCH_CLAUSE, self._index, self._relation, self._searchTerm)
         if not result:
-            result = self.construct(SEARCH_CLAUSE, self.searchTerm)
+            result = self._construct(SEARCH_CLAUSE, self._searchTerm)
         return result
 
-    def relation(self):
+    def _relation(self):
         """
         relation ::= comparitor [modifierList]
         we use:
         relation ::= comparitor modifierList | comparitor
         """
-        comparitor = self.comparitor()
+        comparitor = self._comparitor()
         if not comparitor:
             return False
         if self._tokens.safePeek() == '/':
-            modifierList = self.modifierList()
+            modifierList = self._modifierList()
             return RELATION(comparitor, modifierList)
 
         return RELATION(comparitor)
 
-    def modifierName(self):
+    def _modifierName(self):
         if not self._tokens.hasNext():
             return False
 
         modifierName = self._tokens.next()
-        if modifierName not in self.supportedModifierNames:
+        if modifierName not in self._supportedModifierNames:
             raise UnsupportedCQL("Unsupported ModifierName: %s" % modifierName)
         return TERM(modifierName)
 
-    def comparitor(self):
+    def _comparitor(self):
         """
         comparitor ::= comparitorSymbol | namedComparitor
         comparitorSymbol ::= '=' | '>' | '<' | '>=' | '<=' | '<>'
@@ -257,21 +257,21 @@ class CQLParser:
         token = self._tokens.peek().lower()
         if not token in DEFAULTCOMPARITORS:
             return False
-        if token not in self.supportedComparitors:
+        if token not in self._supportedComparitors:
             raise UnsupportedCQL('Unsupported comparitor: %s' % token)
         return COMPARITOR(self._tokens.next())
 
-    def modifierList(self):
+    def _modifierList(self):
         """
         modifierList ::=  modifierList modifier | modifier
         """
-        return self.construct(MODIFIERLIST, self.modifier)
+        return self._construct(MODIFIERLIST, self._modifier)
 
-    def modifier(self):
+    def _modifier(self):
         """
         modifier ::= '/' modifierName [comparitorSymbol modifierValue]
         """
         slashToken = self._tokens.safeNext()
         if not slashToken == '/':
             return False
-        return self.construct(MODIFIER, self.modifierName, self.comparitor, self.modifierValue)
+        return self._construct(MODIFIER, self._modifierName, self._comparitor, self._modifierValue)
