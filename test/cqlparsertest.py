@@ -23,7 +23,6 @@
 ## end license ##
 
 import unittest
-from cq2utils import CallTrace
 from cqlparser.cqlparser import CQLParser, parseString, \
     CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, MODIFIERLIST, MODIFIER, TERM, IDENTIFIER, UnsupportedCQL, CQLParseException
 
@@ -116,17 +115,33 @@ class CQLParserTest(unittest.TestCase):
     def testAcceptVisitor(self):
         q = CQL_QUERY(None)
         c = COMPARITOR('=')
-        mockVisitor = CallTrace('visitor')
+        class MockVisitor(object):
+            def __init__(self):
+                self.visitCQL_QUERY_called = 0
+                self.visitCQL_QUERY_args = []
+                self.visitCOMPARITOR_called = 0
+                self.visitCOMPARITOR_args = []
+            def visitCQL_QUERY(self, *args):
+                self.visitCQL_QUERY_called += 1
+                self.visitCQL_QUERY_args += args
+            def visitCOMPARITOR(self, *args):
+                self.visitCOMPARITOR_called += 1
+                self.visitCOMPARITOR_args += args
+                
+        mockVisitor = MockVisitor()
         q.accept(mockVisitor)
-        self.assertEquals('visitCQL_QUERY', mockVisitor.calledMethods[0].name)
-        self.assertEquals(q, mockVisitor.calledMethods[0].args[0])
+        self.assertEquals(1, mockVisitor.visitCQL_QUERY_called)
+        self.assertEquals(q, mockVisitor.visitCQL_QUERY_args[0])
         c.accept(mockVisitor)
-        self.assertEquals('visitCOMPARITOR', mockVisitor.calledMethods[1].name)
-        self.assertEquals(c, mockVisitor.calledMethods[1].args[0])
+        self.assertEquals(1, mockVisitor.visitCOMPARITOR_called)
+        self.assertEquals(c, mockVisitor.visitCOMPARITOR_args[0])
 
     def testVisitReturnValue(self):
         q = CQL_QUERY(None)
-        mockVisitor = CallTrace('visitor', returnValues = {'visitCQL_QUERY': 'nut'})
+        class MockVisitor(object):
+            def visitCQL_QUERY(self, *args):
+                return 'nut'
+        mockVisitor = MockVisitor()
         value = q.accept(mockVisitor)
         self.assertEquals('nut', value)
 
