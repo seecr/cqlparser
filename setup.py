@@ -26,4 +26,12 @@ from distutils.core import setup
 setup(
     name='cqlparser',
     packages=['cqlparser'],
+    version='%VERSION%',
+    url='http://www.cq2.nl/plainview/cqlparser.page',
+    author='Seek You Too',
+    author_email='info@cq2.nl',
+    description='CQLParser is a parser that builds a parsetree for the given CQL and can convert this into other formats.',
+    long_description='CQLParser is a parser that builds a parsetree for the given CQL and can convert this into other formats.',
+    license='GNU Public License',
+    platforms='all',
 )
