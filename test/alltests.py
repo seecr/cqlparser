@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 ## begin license ##
 #
-#    CQLParser is parser that builts up a parsetree for the given CQL and 
+#    CQLParser is a parser that builds a parsetree for the given CQL and 
 #    can convert this into other formats.
-#    Copyright (C) 2005-2007 Seek You Too B.V. (CQ2) http://www.cq2.nl
+#    Copyright (C) 2005-2008 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of CQLParser
 #
@@ -18,7 +18,7 @@
 #    GNU General Public License for more details.
 #
 #    You should have received a copy of the GNU General Public License
-#    along with $PROGRAM; if not, write to the Free Software
+#    along with CQLParser; if not, write to the Free Software
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
