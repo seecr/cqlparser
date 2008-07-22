@@ -49,6 +49,7 @@ class CQLTokenizerTest(unittest.TestCase):
         self.assertEquals(['lengthOfFemur', '>', '2.4'], tokenize('lengthOfFemur > 2.4'))
         self.assertEquals(['bioMass', '>=', '100'], tokenize('bioMass >= 100'))
         self.assertEquals(['"dino(saur)"'], tokenize('"dino(saur)"'))
+        self.assertEquals(['"\nterm with newline"'], tokenize('"\nterm with newline"'))
 
     def testUnfinishedLines(self):
         try:

@@ -30,7 +30,7 @@ import re
 # charString1 is every token except a " ( ) > = < / and spaces
 charString1 = r'[^"()>=<\s/]+'
 # charString2 is every token surrounded by quotes "", except \"
-charString2 = r'(?P<quot>\").*?((?<!\\)(?P=quot))'
+charString2 = r'(?s)(?P<quot>\").*?((?<!\\)(?P=quot))'
 # tokens are charString1, charString2 or ( ) >= <> <= > < = /
 tokens = [ r'\(', r'\)', '>=', '<>', '<=', '>', '<', r'\=', r'\/', charString2, charString1 ]
 
