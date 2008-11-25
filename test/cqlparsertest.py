@@ -1,6 +1,6 @@
 ## begin license ##
 #
-#    CQLParser is a parser that builds a parsetree for the given CQL and 
+#    CQLParser is a parser that builds a parsetree for the given CQL and
 #    can convert this into other formats.
 #    Copyright (C) 2005-2008 Seek You Too (CQ2) http://www.cq2.nl
 #
@@ -42,6 +42,24 @@ class CQLParserTest(unittest.TestCase):
                 SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))), BOOLEAN('and'),
                     SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term2')))))),
             parseString('term and term2'))
+
+    def testAddClauseToQuery(self):
+        q1 = parseString('term1')
+        q2 = parseString('term2')
+        q3 = q1.andQuery(q2)
+        should = parseString('term1 AND term2')
+        self.assertEquals(should, q3)
+
+        q4 = parseString('term4')
+        q5 = q3.andQuery(q4)
+        should = parseString('term1 AND term2 AND term4')
+        self.assertEquals(should, q5)
+
+        q6 = parseString('term6')
+        q7 = q5.andQuery(q6)
+        should = parseString('term1 AND term2 AND term4 AND term6')
+        self.assertEquals(should, q7)
+
 
     def testBooleansAreCaseInsensitive(self):
         self.assertEquals(
@@ -127,7 +145,7 @@ class CQLParserTest(unittest.TestCase):
             def visitCOMPARITOR(self, *args):
                 self.visitCOMPARITOR_called += 1
                 self.visitCOMPARITOR_args += args
-                
+
         mockVisitor = MockVisitor()
         q.accept(mockVisitor)
         self.assertEquals(1, mockVisitor.visitCQL_QUERY_called)
