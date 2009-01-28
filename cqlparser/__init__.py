@@ -23,3 +23,4 @@
 ## end license ##
 from cqlparser import parseString, CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, TERM, COMPARITOR, UnsupportedCQL, CQLParseException
 from cqlvisitor import CqlVisitor
+from cqlidentityvisitor import CqlIdentityVisitor

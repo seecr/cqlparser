@@ -37,6 +37,7 @@ import unittest
 from cqlparsertest import CQLParserTest
 from cqltokenizertest import CQLTokenizerTest
 from cqlcomposertest import CQLComposerTest
+from cqlidentityvisitortest import CqlIdentityVisitorTest
 
 if __name__ == '__main__':
     unittest.main()
