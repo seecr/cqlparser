@@ -23,8 +23,16 @@
 ## end license ##
 from cqlparser import parseString, CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, TERM, UnsupportedCQL, CQLParseException
 
+from re import compile
+
 class ParseException(Exception):
     pass
+#
+# This tokenization is based on the CQL specification at http://loc.gov/cql
+#
+# charString1 is every token except a " ( ) > = < / and spaces
+disallowedCharstringTokensRe = compile(r'["()>=<\s/]')
+
 
 # REWRITE using CqlVisitor (left as an exercise to ther reader ;-)
 def compose(node):
@@ -45,7 +53,10 @@ def compose(node):
         assert len(node.children()) == 1
         return node.children()[0]
     if node.__class__ == TERM:
-        return node.children()[0]
+        token = node.children()[0]
+        if disallowedCharstringTokensRe.search(token):
+            return '"%s"' % token.replace('"', r'\"')
+        return token
     return str(node)
 
 def fromString(aCQLString):

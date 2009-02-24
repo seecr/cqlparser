@@ -134,7 +134,8 @@ class CQLParser:
     def _term(self):
         token = self._tokens.safeNext()
         if token and (not token[:1] in ['(', ')', '>', '=', '<', '/']):
-            return TERM(token)
+            
+            return TERM(token[1:-1].replace(r'\"', '"') if '"' == token[0] == token[-1] else token)
         return False
 
     def _searchTerm(self):

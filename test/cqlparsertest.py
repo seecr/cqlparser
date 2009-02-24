@@ -34,8 +34,9 @@ class CQLParserTest(unittest.TestCase):
 
     def testOneTerm(self):
         self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))))), parseString('term'))
-        self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('"white space"'))))), parseString('"white space"'))
-
+        self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('white space'))))), parseString('"white space"'))
+        self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('string "quotes"'))))), parseString(r'"string \"quotes\""'))
+        
     def testTwoTerms(self):
         self.assertEquals(
             CQL_QUERY(SCOPED_CLAUSE(
