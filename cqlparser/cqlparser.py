@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    CQLParser is a parser that builds a parsetree for the given CQL and
@@ -186,8 +187,20 @@ class CQLParser:
                 self._booleanGroup,
                 self._scopedClause)
         if tail:
-            return SCOPED_CLAUSE(*(head + tail))
+            return self.__swapScopedClauses(head, *tail)
         return SCOPED_CLAUSE(*head)
+
+    def __swapScopedClauses(self, searchClause, booleanGroup, scopedClause):
+        result = SCOPED_CLAUSE(searchClause[0], booleanGroup, scopedClause)
+        if booleanGroup.children()[0] in ['and', 'not']:
+            if len(scopedClause.children()) == 3:
+                childClause = scopedClause.children()[0]
+                childBoolean = scopedClause.children()[1]
+                childScopedClause = scopedClause.children()[2]
+                extraNode = SCOPED_CLAUSE(searchClause[0], booleanGroup, childClause)
+                scopedClause._children = (extraNode, childBoolean, childScopedClause.children()[0])
+                result = scopedClause
+        return result
 
     def _boolean(self):
         """boolean ::= 'and' | 'or' | 'not' | 'prox'"""

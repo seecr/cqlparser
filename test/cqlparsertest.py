@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    CQLParser is a parser that builds a parsetree for the given CQL and
@@ -44,6 +45,20 @@ class CQLParserTest(unittest.TestCase):
                     SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term2')))))),
             parseString('term and term2'))
 
+    def testPrecedence(self):
+        answer = CQL_QUERY(
+            SCOPED_CLAUSE(
+                SCOPED_CLAUSE(
+                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))),
+                    BOOLEAN('and'),
+                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term2')))
+                ),
+                BOOLEAN('or'),
+                SEARCH_CLAUSE(SEARCH_TERM(TERM('term3')))
+            )
+        )
+        self.assertEquals(answer, parseString('term and term2 or term3'))
+
     def testAddClauseToQuery(self):
         q1 = parseString('term1')
         q2 = parseString('term2')
@@ -52,6 +67,7 @@ class CQLParserTest(unittest.TestCase):
         self.assertEquals(should, q3)
 
         q4 = parseString('term4')
+        print str(q4)
         q5 = q3.andQuery(q4)
         should = parseString('term1 AND term2 AND term4')
         self.assertEquals(should, q5)

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2.5
 ## begin license ##
 #
 #    CQLParser is a parser that builds a parsetree for the given CQL and
