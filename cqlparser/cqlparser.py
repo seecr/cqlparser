@@ -60,7 +60,7 @@ class CQLAbstractSyntaxNode(object):
     def children(self):
         return self._children
 
-for aClass in ['SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDEX', 'RELATION', 'COMPARITOR', 'MODIFIERLIST', 'MODIFIER', 'TERM', 'IDENTIFIER']:
+for aClass in ['SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDEX', 'RELATION', 'COMPARITOR', 'MODIFIERLIST', 'MODIFIER', 'TERM', 'IDENTIFIER', 'CQL_QUERY']:
     exec("""class %s(CQLAbstractSyntaxNode):
     def accept(self, visitor):
         return visitor.visit%s(self)
@@ -70,15 +70,6 @@ def findLastScopedClause(aNode):
     if len(aNode._children) == 1 and type(aNode) == SCOPED_CLAUSE:
         return aNode
     return findLastScopedClause(aNode._children[-1])
-
-class CQL_QUERY(CQLAbstractSyntaxNode):
-    def accept(self, visitor):
-        return visitor.visitCQL_QUERY(self)
-
-    def andQuery(self, aCQL_QUERY):
-        lastScopedClause = findLastScopedClause(self._children[-1])
-        lastScopedClause._children += (BOOLEAN('and'),) + aCQL_QUERY._children
-        return self
 
 def parseString(cqlString, **kwargs):
     from cqltokenizer import tokenStack

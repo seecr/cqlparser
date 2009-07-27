@@ -59,25 +59,6 @@ class CQLParserTest(unittest.TestCase):
         )
         self.assertEquals(answer, parseString('term and term2 or term3'))
         
-    def testAddClauseToQuery(self):
-        q1 = parseString('term1')
-        q2 = parseString('term2')
-        q3 = q1.andQuery(q2)
-        should = parseString('term1 AND term2')
-        self.assertEquals(should, q3)
-
-        q4 = parseString('term4')
-        print str(q4)
-        q5 = q3.andQuery(q4)
-        should = parseString('term1 AND term2 AND term4')
-        self.assertEquals(should, q5)
-
-        q6 = parseString('term6')
-        q7 = q5.andQuery(q6)
-        should = parseString('term1 AND term2 AND term4 AND term6')
-        self.assertEquals(should, q7)
-
-
     def testBooleansAreCaseInsensitive(self):
         self.assertEquals(
             CQL_QUERY(SCOPED_CLAUSE(
@@ -239,3 +220,4 @@ class CQLParserTest(unittest.TestCase):
             self.fail()
         except exceptionClass, e:
             pass
+        
