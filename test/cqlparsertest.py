@@ -101,10 +101,10 @@ class CQLParserTest(unittest.TestCase):
         SE = SEARCH_CLAUSE
         ST = SEARCH_TERM
         T = TERM
-        self.assertEquals(Q(SC(SE("(", Q(SC(SE(ST(T('term'))))), ")"))), parseString('(term)'))
-        self.assertEquals(Q(SC(SE("(", Q(SC(SE("(", Q(SC(SE(ST(T('term'))))), ")"))), ")"))), parseString('((term))'))
+        self.assertEquals(Q(SC(SE(Q(SC(SE(ST(T('term')))))))), parseString('(term)'))
+        self.assertEquals(Q(SC(SE(Q(SC(SE(Q(SC(SE(ST(T('term'))))))))))), parseString('((term))'))
 
-        self.assertEquals(Q(SC(SE("(", Q(SC(SE(ST(T('term'))), BOOLEAN('and'), SC(SE(ST(T('term2')))))), ")"))), parseString('(term and term2)'))
+        self.assertEquals(Q(SC(SE(Q(SC(SE(ST(T('term'))), BOOLEAN('and'), SC(SE(ST(T('term2'))))))))), parseString('(term and term2)'))
 
         self.assertException(CQLParseException, '(term')
         self.assertException(CQLParseException, '(term term2')
