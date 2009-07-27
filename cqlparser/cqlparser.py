@@ -59,6 +59,9 @@ class CQLAbstractSyntaxNode(object):
     def __ne__(self, other):
         return not self.__eq__(other)
 
+    def __hash__(self):
+        return hash(self.__class__) * hash(self._children)
+
     def children(self):
         return self._children
 

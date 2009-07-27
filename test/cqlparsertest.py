@@ -228,6 +228,9 @@ class CQLParserTest(unittest.TestCase):
     )
 )""", q.prettyPrint())
 
+    def testHashing(self):
+        self.assertEquals(hash(parseString('term')), hash(parseString('term')))
+
     ### Helper methods
     def assertException(self, exceptionClass, queryString, **kwargs):
         try:
