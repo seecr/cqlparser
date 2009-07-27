@@ -58,7 +58,7 @@ class CQLParserTest(unittest.TestCase):
             )
         )
         self.assertEquals(answer, parseString('term and term2 or term3'))
-
+        
     def testAddClauseToQuery(self):
         q1 = parseString('term1')
         q2 = parseString('term2')
@@ -179,6 +179,58 @@ class CQLParserTest(unittest.TestCase):
         mockVisitor = MockVisitor()
         value = q.accept(mockVisitor)
         self.assertEquals('nut', value)
+
+    def testPrettyPrintSimple(self):
+        q = parseString('aap')
+        self.assertEquals("""CQL_QUERY(
+    SCOPED_CLAUSE(
+        SEARCH_CLAUSE(
+            SEARCH_TERM(
+                TERM('aap')
+            )
+        )
+    )
+)""", q.prettyPrint())
+
+    def testPrettyPrintComplex(self):
+        q = parseString('aap AND (noot = mies OR vuur)')
+        self.assertEquals("""CQL_QUERY(
+    SCOPED_CLAUSE(
+        SEARCH_CLAUSE(
+            SEARCH_TERM(
+                TERM('aap')
+            )
+        ),
+        BOOLEAN('and'),
+        SCOPED_CLAUSE(
+            SEARCH_CLAUSE(
+                CQL_QUERY(
+                    SCOPED_CLAUSE(
+                        SEARCH_CLAUSE(
+                            INDEX(
+                                TERM('noot')
+                            ),
+                            RELATION(
+                                COMPARITOR('=')
+                            ),
+                            SEARCH_TERM(
+                                TERM('mies')
+                            )
+                        ),
+                        BOOLEAN('or'),
+                        SCOPED_CLAUSE(
+                            SEARCH_CLAUSE(
+                                SEARCH_TERM(
+                                    TERM('vuur')
+                                )
+                            )
+                        )
+                    )
+                )
+            )
+        )
+    )
+)""", q.prettyPrint())
 
     ### Helper methods
     def assertException(self, exceptionClass, queryString, **kwargs):

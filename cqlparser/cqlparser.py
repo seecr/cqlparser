@@ -41,7 +41,18 @@ class CQLAbstractSyntaxNode(object):
         return self.__str__()
 
     def __str__(self):
+        #return self.prettyPrint()
         return "%s(%s)" % (str(self.__class__).split('.')[-1][:-2], ", ".join(map(repr, self._children)))
+
+    def prettyPrint(self, offset=0):
+        spaces = offset * 4 * ' '
+        if len(self._children) == 1 and type(self._children[0] ) == str:
+            return spaces + str(self.__class__).split('.')[-1][:-2] + "(" + repr(self._children[0]) + ")"
+        result = [spaces + str(self.__class__).split('.')[-1][:-2] + "("]
+        result.append(',\n'.join(child.prettyPrint(offset+1) for child in self._children if type(child)!=str))
+        result.append(spaces + ")")
+        return '\n'.join(result)
+        
 
     def __eq__(self, other):
         return self.__class__ == other.__class__ and self._children == other._children
