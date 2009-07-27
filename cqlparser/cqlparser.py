@@ -194,19 +194,20 @@ class CQLParser:
                 self._booleanGroup,
                 self._scopedClause)
         if tail:
-            return self.__swapScopedClauses(head, *tail)
+            return self.__swapScopedClauses(*(head + tail))
         return SCOPED_CLAUSE(*head)
 
     def __swapScopedClauses(self, searchClause, booleanGroup, scopedClause):
-        result = SCOPED_CLAUSE(searchClause[0], booleanGroup, scopedClause)
-        if booleanGroup.children()[0] in ['and', 'not']:
-            if len(scopedClause.children()) == 3:
-                childClause = scopedClause.children()[0]
-                childBoolean = scopedClause.children()[1]
-                childScopedClause = scopedClause.children()[2]
-                extraNode = SCOPED_CLAUSE(searchClause[0], booleanGroup, childClause)
-                scopedClause._children = (extraNode, childBoolean, childScopedClause.children()[0])
-                result = scopedClause
+        if booleanGroup.children()[0] not in ['and', 'not']:
+            return SCOPED_CLAUSE(searchClause, booleanGroup, scopedClause)
+        if len(scopedClause.children()) == 3:
+            childLeft = scopedClause.children()[0]
+            childBoolean = scopedClause.children()[1]
+            childRight = scopedClause.children()[2]
+            nr2 = SCOPED_CLAUSE(searchClause, booleanGroup, childLeft)
+            result = SCOPED_CLAUSE(nr2, childBoolean, childRight)
+        else:
+            result = SCOPED_CLAUSE(searchClause, booleanGroup, scopedClause)
         return result
 
     def _boolean(self):

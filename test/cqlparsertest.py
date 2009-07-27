@@ -55,10 +55,13 @@ class CQLParserTest(unittest.TestCase):
                     SEARCH_CLAUSE(SEARCH_TERM(TERM('term2')))
                 ),
                 BOOLEAN('or'),
-                SEARCH_CLAUSE(SEARCH_TERM(TERM('term3')))
+                SCOPED_CLAUSE(
+                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term3')))
+                )
             )
         )
-        self.assertEquals(answer, parseString('term and term2 or term3'))
+        result = parseString('term and term2 or term3')
+        self.assertEquals(answer, result, '%s != %s' % (answer.prettyPrint(), result.prettyPrint()))
 
     def testPrecedenceOrAnd(self):
         answer = CQL_QUERY(
@@ -74,6 +77,32 @@ class CQLParserTest(unittest.TestCase):
         )
         self.assertEquals(answer, parseString('term1 or term2 and term3'))
         
+    def testPrecedenceAndOr2(self):
+        answer = CQL_QUERY(
+            SCOPED_CLAUSE(
+                SCOPED_CLAUSE(
+                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))),
+                    BOOLEAN('and'),
+                    SEARCH_CLAUSE(parseString('term2 and term3 and term4 and term5'))
+                ),
+                BOOLEAN('or'),
+                SCOPED_CLAUSE(
+                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term6')))
+                )
+            )
+        )
+        self.assertEquals(answer, parseString('term and (term2 and term3 and term4 and term5) or term6'))
+
+    def testPrecedenceAndAndAnd(self):
+        #expected = CQL_QUERY(
+    #SCOPED_CLAUSE(
+        #SEARCH_CLAUSE(SEARCH_TERM(TERM('term4'))),
+        #BOOLEAN('and'),
+        #SEARCH_CLAUSE(SEARCH_TERM(TERM('term5')))
+
+
+        print parseString('term2 and term3 and term4 and term5 and term6 and term7 and term8').prettyPrint()
+
     def testBooleansAreCaseInsensitive(self):
         self.assertEquals(
             CQL_QUERY(SCOPED_CLAUSE(
