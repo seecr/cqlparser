@@ -52,10 +52,12 @@ class CQLAbstractSyntaxNode(object):
         result.append(',\n'.join(child.prettyPrint(offset+1) for child in self._children if type(child)!=str))
         result.append(spaces + ")")
         return '\n'.join(result)
-        
 
     def __eq__(self, other):
         return self.__class__ == other.__class__ and self._children == other._children
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def children(self):
         return self._children

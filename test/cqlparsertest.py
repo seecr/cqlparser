@@ -26,6 +26,7 @@
 import unittest
 from cqlparser.cqlparser import CQLParser, parseString, \
     CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, MODIFIERLIST, MODIFIER, TERM, IDENTIFIER, UnsupportedCQL, CQLParseException
+import string
 
 class CQLParserTest(unittest.TestCase):
     """http://www.loc.gov/standards/sru/sru1-1archive/cql.html"""
@@ -45,7 +46,7 @@ class CQLParserTest(unittest.TestCase):
                     SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term2')))))),
             parseString('term and term2'))
 
-    def testPrecedence(self):
+    def testPrecedenceAndOr(self):
         answer = CQL_QUERY(
             SCOPED_CLAUSE(
                 SCOPED_CLAUSE(
@@ -58,6 +59,20 @@ class CQLParserTest(unittest.TestCase):
             )
         )
         self.assertEquals(answer, parseString('term and term2 or term3'))
+
+    def testPrecedenceOrAnd(self):
+        answer = CQL_QUERY(
+            SCOPED_CLAUSE(
+                SEARCH_CLAUSE(SEARCH_TERM(TERM('term1'))),
+                BOOLEAN('or'),
+                SCOPED_CLAUSE(
+                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term2'))),
+                    BOOLEAN('and'),
+                    SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term3'))))
+                )
+            )
+        )
+        self.assertEquals(answer, parseString('term1 or term2 and term3'))
         
     def testBooleansAreCaseInsensitive(self):
         self.assertEquals(
@@ -220,4 +235,3 @@ class CQLParserTest(unittest.TestCase):
             self.fail()
         except exceptionClass, e:
             pass
-        
