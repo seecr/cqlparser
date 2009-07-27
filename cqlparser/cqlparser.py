@@ -251,11 +251,7 @@ class CQLParser:
         if not self._tokens.hasNext():
             return False
         if self._tokens.peek() == "(":
-            return \
-                self._construct(SEARCH_CLAUSE,
-                    self._token('('),
-                    self._cqlQuery,
-                    self._token(')'))
+            return self._construct(SEARCH_CLAUSE, self._cqlQuery)
         result = self._construct(SEARCH_CLAUSE, self._index, self._relation, self._searchTerm)
         if not result:
             result = self._construct(SEARCH_CLAUSE, self._searchTerm)
