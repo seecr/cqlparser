@@ -40,8 +40,6 @@ class CqlVisitor(object):
         return self.visitChildren(node)
 
     def visitSEARCH_CLAUSE(self, node):
-        if len(node.children()) == 3 and node.children()[0] == "(":
-            return ("(", node.children()[1].accept(self), ")")
         return self.visitChildren(node)
 
     def visitINDEX(self, node):

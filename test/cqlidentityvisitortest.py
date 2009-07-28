@@ -38,6 +38,8 @@ class CqlIdentityVisitorTest(TestCase):
         self.assertIdentity('(query)')
         self.assertIdentity('(one) and (two or three)')
         self.assertIdentity('(one) and (two = "three")')
+        self.assertIdentity('one and two or three')
+        self.assertIdentity('one or two and three')
 
 #CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE('(', CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('query'))))), ')'))) !=
 #CQL_QUERY(SCOPED_CLAUSE(             ('(', CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('query'))))), ')')))
