@@ -69,7 +69,9 @@ for aClass in ['SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDE
     exec("""class %s(CQLAbstractSyntaxNode):
     def accept(self, visitor):
         return visitor.visit%s(self)
-""" % (aClass, aClass))
+    def name(self):
+        return "%s"
+""" % (aClass, aClass, aClass))
 
 def findLastScopedClause(aNode):
     if len(aNode._children) == 1 and type(aNode) == SCOPED_CLAUSE:
