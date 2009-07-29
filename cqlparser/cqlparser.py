@@ -160,7 +160,7 @@ class CQLParser:
 
     def _cqlQuery(self):
         """cqlQuery ::= prefixAssignment cqlQuery | scopedClause"""
-        if self._tokens.peek() == ">":
+        if self._tokens.safePeek() == ">":
             return \
                 self._construct(CQL_QUERY,
                     self._prefixAssignment,

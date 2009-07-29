@@ -39,6 +39,9 @@ class CQLParserTest(unittest.TestCase):
         self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('white space'))))), parseString('"white space"'))
         self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('string "quotes"'))))), parseString(r'"string \"quotes\""'))
         
+    def testTermWithOrWithoutQuotes(self):
+        self.assertEquals(parseString('"cats"'), parseString('cats'))
+
     def testTwoTerms(self):
         self.assertEquals(
             CQL_QUERY(SCOPED_CLAUSE(
@@ -137,6 +140,7 @@ class CQLParserTest(unittest.TestCase):
 
     def testUnfinishedQuery(self):
         self.assertException(CQLParseException, 'term and')
+        self.assertException(CQLParseException, 'term AND (')
 
     def testIllegalBooleanGroups(self):
         self.assertException(CQLParseException, 'term notanyof_and_or_not_prox term2')
