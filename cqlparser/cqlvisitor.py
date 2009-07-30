@@ -68,8 +68,8 @@ class CqlVisitor(object):
     def visitSEARCH_TERM(self, node):
         assert len(node.children()) == 1
         term = node.children()[0].accept(self)
-        if term[0] == '"':
-            return term[1: -1] #.replace(r'\"', '"')
+        #if term[0] == '"':
+            #return term[1: -1] #.replace(r'\"', '"')
         return term
 
     def visitTERM(self, node):
