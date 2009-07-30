@@ -40,12 +40,14 @@ class Cql2StringTest(TestCase):
         self.assertCql('term1 NOT term2 OR term3 AND term4')
 
     def testRelation(self):
-        self.assertCql('field1 = term1')
+        self.assertCql('field1=term1')
         self.assertCql('field1 exact term1')
-        self.assertCql('field1 = term1 AND field2 exact term2')
+        self.assertCql('field1=term1 AND field2 exact term2')
+        self.assertCql('field1 > 3')
+        self.assertCql('field1 >= 3')
         
     def testBraces(self):
-        self.assertCql('field1 = term1 AND (term2 OR term3)')
+        self.assertCql('field1=term1 AND (term2 OR term3)')
 
     def testBoost(self):
         self.assertCql('field0 =/boost=1.5 value')
