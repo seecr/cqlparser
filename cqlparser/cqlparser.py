@@ -60,7 +60,7 @@ class CQLAbstractSyntaxNode(object):
         return not self.__eq__(other)
 
     def __hash__(self):
-        return hash(self.__class__) * hash(self._children)
+        return hash(self.__class__) ^ hash(self._children)
 
     def children(self):
         return self._children
@@ -144,8 +144,9 @@ class CQLParser:
     def _term(self):
         token = self._tokens.safeNext()
         if token and (not token[:1] in ['(', ')', '>', '=', '<', '/']):
-            
-            return TERM(token[1:-1].replace(r'\"', '"') if '"' == token[0] == token[-1] else token)
+            if '"' == token[0] == token[-1]:
+                token = token[1:-1].replace(r'\"', '"')
+            return TERM(token)
         return False
 
     def _searchTerm(self):

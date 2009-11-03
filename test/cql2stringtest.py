@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 ## begin license ##
 #
 #    CQLParser is a parser that builds a parsetree for the given CQL and
@@ -53,7 +54,8 @@ class Cql2StringTest(TestCase):
         self.assertCql('field0 =/boost=1.5 value')
 
     def assertCql(self, expected, input=None):
-        input = expected if input == None else input
+        if input == None:
+            input = expected
         self.assertEquals(expected, cql2string(parseString(input)))
         self.assertTrue(parseString(expected))
         
