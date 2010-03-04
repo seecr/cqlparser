@@ -1,0 +1,93 @@
+Changeset created on Thu Mar  4 14:22:04 CET 2010 by Seek You Too
+
+Description: CqlIdentityVisitor will now deepcopy the complete tree.
+
+    The previous version of CqlIdentityVisitor made a copy of every
+    node, except the terminals, e.g. TERM, BOOLEAN. This could possibly
+    turn into a problem when replaceChildren is called on these nodes.
+    Now a copy is made of every node.
+
+Baseline version: cqlparser/tags/version_1.5.1
+
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified cqlparser-1.5.1/cqlparser/cqlidentityvisitor.py cqlparser-trunk/cqlparser/cqlidentityvisitor.py
+--- cqlparser-1.5.1/cqlparser/cqlidentityvisitor.py	2010-03-04 14:17:49.000000000 +0100
++++ cqlparser-trunk/cqlparser/cqlidentityvisitor.py	2010-03-04 14:19:25.000000000 +0100
+@@ -2,7 +2,7 @@
+ #
+ #    CQLParser is a parser that builds a parsetree for the given CQL and
+ #    can convert this into other formats.
+-#    Copyright (C) 2005-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #
+ #    This file is part of CQLParser
+ #
+@@ -33,14 +33,16 @@
+         return self.visitChildren(node)
+ 
+     # terminals
++    def _copy(self, node):
++        return node.__class__(*node.children())
+     
+     def visitCOMPARITOR(self, node):
+         assert len(node.children()) == 1
+-        return node
++        return self._copy(node)
+ 
+     def visitBOOLEAN(self, node):
+         assert len(node.children()) == 1
+-        return node
++        return self._copy(node)
+     
+     def visitTERM(self, node):
+-        return node
+\ No newline at end of file
++        return self._copy(node)
+diff --unidirectional-new-file --exclude=.svn --exclude='*.pyc' --exclude=applied --recursive --unified cqlparser-1.5.1/test/cqlidentityvisitortest.py cqlparser-trunk/test/cqlidentityvisitortest.py
+--- cqlparser-1.5.1/test/cqlidentityvisitortest.py	2010-03-04 14:17:49.000000000 +0100
++++ cqlparser-trunk/test/cqlidentityvisitortest.py	2010-03-04 14:19:25.000000000 +0100
+@@ -2,7 +2,7 @@
+ #
+ #    CQLParser is a parser that builds a parsetree for the given CQL and
+ #    can convert this into other formats.
+-#    Copyright (C) 2005-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #
+ #    This file is part of CQLParser
+ #
+@@ -27,9 +27,25 @@
+ from cqlparser import CqlIdentityVisitor
+ from cqlparser import parseString
+ 
++def allnodes(node):
++    result = [node]
++    index = 0 
++    while index < len(result):
++        new_index = len(result)
++        for node in result[index:]:
++            result.extend([n for n in node.children() if hasattr(n, 'children')])
++        index = new_index
++    return result
++
+ class CqlIdentityVisitorTest(TestCase):
+     def assertIdentity(self, query):
+-        self.assertEquals(parseString(query), CqlIdentityVisitor(parseString(query)).visit())
++        input_query = parseString(query)
++        result_query = CqlIdentityVisitor(input_query).visit()
++        self.assertEquals(input_query, result_query)
++
++        input_ids = set(id(n) for n in allnodes(input_query)) 
++        result_ids = set(id(n) for n in allnodes(result_query))
++        self.assertEquals(0, len(input_ids.intersection(result_ids)), 'Expected new ast to be a deepcopy.')
+ 
+     def testIdentity(self):
+         self.assertIdentity('query')
+@@ -41,5 +57,6 @@
+         self.assertIdentity('one and two or three')
+         self.assertIdentity('one or two and three')
+ 
+-#CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE('(', CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('query'))))), ')'))) !=
+-#CQL_QUERY(SCOPED_CLAUSE(             ('(', CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('query'))))), ')')))
+\ No newline at end of file
++
++
++
