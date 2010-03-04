@@ -2,7 +2,7 @@
 #
 #    CQLParser is a parser that builds a parsetree for the given CQL and
 #    can convert this into other formats.
-#    Copyright (C) 2005-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of CQLParser
 #
@@ -33,14 +33,16 @@ class CqlIdentityVisitor(CqlVisitor):
         return self.visitChildren(node)
 
     # terminals
+    def _copy(self, node):
+        return node.__class__(*node.children())
     
     def visitCOMPARITOR(self, node):
         assert len(node.children()) == 1
-        return node
+        return self._copy(node)
 
     def visitBOOLEAN(self, node):
         assert len(node.children()) == 1
-        return node
+        return self._copy(node)
     
     def visitTERM(self, node):
-        return node
+        return self._copy(node)
