@@ -3,7 +3,7 @@
 #
 #    CQLParser is a parser that builds a parsetree for the given CQL and
 #    can convert this into other formats.
-#    Copyright (C) 2005-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of CQLParser
 #
@@ -64,6 +64,9 @@ class CQLAbstractSyntaxNode(object):
 
     def children(self):
         return self._children
+
+    def replaceChildren(self, *args):
+        self._children = args
 
 for aClass in ['SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDEX', 'RELATION', 'COMPARITOR', 'MODIFIERLIST', 'MODIFIER', 'TERM', 'IDENTIFIER', 'CQL_QUERY']:
     exec("""class %s(CQLAbstractSyntaxNode):

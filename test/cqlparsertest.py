@@ -3,7 +3,7 @@
 #
 #    CQLParser is a parser that builds a parsetree for the given CQL and
 #    can convert this into other formats.
-#    Copyright (C) 2005-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of CQLParser
 #
@@ -24,9 +24,10 @@
 ## end license ##
 
 import unittest
-from cqlparser.cqlparser import CQLParser, parseString, \
-    CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, MODIFIERLIST, MODIFIER, TERM, IDENTIFIER, UnsupportedCQL, CQLParseException
+from cqlparser.cqlparser import CQLParser, parseString, UnsupportedCQL, CQLParseException
+from cqlparser.cqlparser import CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, MODIFIERLIST, MODIFIER, TERM, IDENTIFIER
 import string
+from cqlparser import cql2string
 
 class CQLParserTest(unittest.TestCase):
     """http://www.loc.gov/standards/sru/sru1-1archive/cql.html"""
@@ -285,6 +286,15 @@ class CQLParserTest(unittest.TestCase):
 
     def testHashing(self):
         self.assertEquals(hash(parseString('term')), hash(parseString('term')))
+
+    def testReplaceChildren(self):
+        t = TERM('term')
+        t.replaceChildren('otherterm')
+        self.assertEquals("TERM('otherterm')", str(t))
+        q = parseString('field = value')
+        s = q.children()[0].children()[0] #CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE ..
+        s.replaceChildren(INDEX(TERM('index')), RELATION(COMPARITOR('exact')), SEARCH_TERM(TERM('value')))
+        self.assertEquals('index exact value', cql2string(q))
 
     ### Helper methods
     def assertException(self, exceptionClass, queryString, **kwargs):
