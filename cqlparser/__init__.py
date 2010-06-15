@@ -21,7 +21,7 @@
 #    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
-from cqlparser import parseString, CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, TERM, COMPARITOR, UnsupportedCQL, CQLParseException
+from cqlparser import parseString, CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, TERM, COMPARITOR, UnsupportedCQL, CQLParseException, DEFAULTCOMPARITORS
 from cqlvisitor import CqlVisitor
 from cqlidentityvisitor import CqlIdentityVisitor
 from cql2string import cql2string
