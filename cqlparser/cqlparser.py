@@ -258,13 +258,16 @@ class CQLParser:
             return False
         if self._tokens.peek() == "(":
             self._tokens.next()
-            result = self._construct(SEARCH_CLAUSE, self._cqlQuery)
+            result = SEARCH_CLAUSE(self._cqlQuery())
             if not self._tokens.safeNext() == ')':
                 return False
             return result
         result = self._construct(SEARCH_CLAUSE, self._index, self._relation, self._searchTerm)
         if not result:
-            result = self._construct(SEARCH_CLAUSE, self._searchTerm)
+            searchTerm = self._searchTerm()
+            if searchTerm:
+                return SEARCH_CLAUSE(searchTerm)
+            return False
         return result
 
     def _relation(self):
