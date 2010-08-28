@@ -153,11 +153,17 @@ class CQLParser:
         return False
 
     def _searchTerm(self):
-        return self._construct(SEARCH_TERM, self._term)
+        term = self._term()
+        if term:
+            return SEARCH_TERM(term)
+        return False
 
     def _index(self):
         """index ::= term"""
-        return self._construct(INDEX, self._term)
+        term = self._term()
+        if term:
+            return INDEX(term)
+        return False
 
     def _token(self, aToken, caseSensitive = True):
         return Token(self, aToken, caseSensitive)
@@ -191,17 +197,15 @@ class CQLParser:
         we use:
         scopedClause ::= searchClause booleanGroup scopedClause | searchClause
         """
-        #searchClause = self.searchClause()
-
-        head = self._tryTerms(self._searchClause)
+        head = self._searchClause() # eq to self._tryTerms(self._searchClause)
         if not head:
             return False
         tail = self._tryTerms(
                 self._booleanGroup,
                 self._scopedClause)
         if tail:
-            return self.__swapScopedClauses(*(head + tail))
-        return SCOPED_CLAUSE(*head)
+            return self.__swapScopedClauses(*([head] + tail))
+        return SCOPED_CLAUSE(head)
 
     def __swapScopedClauses(self, searchClause, booleanGroup, scopedClause):
         if booleanGroup.children()[0] not in ['and', 'not']:
@@ -233,16 +237,15 @@ class CQLParser:
         we use:
         booleanGroup ::= boolean modifierList | boolean
         """
-        #head = self.
         if not self._tokens.hasNext():
             return False
-        head = self._tryTerms(self._boolean)
+        head = self._boolean() # eq to self._tryTerms(self._boolean)
         if not head:
             return False
-        tail = self._tryTerms(self._modifierList)
+        tail = self._modifierList() # eq to self._tryTerms(self._modifierList)
         if tail:
             raise UnsupportedCQL("modifierLists on booleanGroups not supported")
-        return head[0]
+        return head
 
     def _searchClause(self):
         """
