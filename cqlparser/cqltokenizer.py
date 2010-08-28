@@ -65,7 +65,7 @@ class TokenStack:
     def __init__(self, tokenizer):
         self._tokens = list(tokenizer)
         self._pointer = 0
-        self._bookmarks = Stack()
+        self._bookmarks = []
 
     def prev(self):
         if self._pointer <= 0:
@@ -97,7 +97,7 @@ class TokenStack:
         return self._pointer < len(self._tokens)
 
     def bookmark(self):
-        self._bookmarks.push(self._pointer)
+        self._bookmarks.append(self._pointer)
 
     def revertToBookmark(self):
         self._pointer = self._bookmarks.pop()
@@ -107,15 +107,3 @@ class TokenStack:
 
     def __str__(self):
         return "TokenStack: " + str(self._tokens)
-
-class Stack:
-    def __init__(self):
-        self._stack = []
-
-    def push(self, elem):
-        self._stack.append(elem)
-
-    def pop(self):
-        result = self._stack[-1]
-        self._stack = self._stack[:-1]
-        return result
