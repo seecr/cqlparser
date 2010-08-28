@@ -74,24 +74,32 @@ class TokenStack:
         return self._tokens[self._pointer]
 
     def peek(self):
-        if not self.hasNext():
+        try:
+            return self._tokens[self._pointer]
+        except IndexError:
             raise StopIteration
-        return self._tokens[self._pointer]
 
     def safePeek(self):
-        if not self.hasNext():
+        try:
+            return self._tokens[self._pointer]
+        except IndexError:
             return None
-        return self._tokens[self._pointer]
 
     def next(self):
-        result = self.peek()
-        self._pointer += 1
-        return result
+        try:
+            result = self._tokens[self._pointer]
+            self._pointer += 1
+            return result
+        except IndexError:
+            raise StopIteration
 
     def safeNext(self):
-        if not self.hasNext():
+        try:
+            result = self._tokens[self._pointer]
+            self._pointer += 1
+            return result
+        except IndexError:
             return None
-        return self.next()
 
     def hasNext(self):
         return self._pointer < len(self._tokens)
