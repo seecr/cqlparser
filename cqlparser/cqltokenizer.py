@@ -74,10 +74,7 @@ class TokenStack:
         return self._tokens[self._pointer]
 
     def peek(self):
-        try:
             return self._tokens[self._pointer]
-        except IndexError:
-            raise StopIteration
 
     def safePeek(self):
         try:

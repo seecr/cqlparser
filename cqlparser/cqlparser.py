@@ -32,6 +32,9 @@ class UnsupportedCQL(Exception):
 class CQLParseException(Exception):
     pass
 
+class RollBack(Exception):
+    pass
+
 class CQLAbstractSyntaxNode(object):
 
     def __init__(self, *args):
@@ -130,7 +133,11 @@ class CQLParser:
         result = []
         self._tokens.bookmark()
         for termFunction in termFunctions:
-            term = termFunction()
+            try:
+                term = termFunction()
+            except (RollBack, IndexError):
+                self._tokens.revertToBookmark()
+                raise
             if not term:
                 self._tokens.revertToBookmark()
                 return False
@@ -150,6 +157,7 @@ class CQLParser:
             if '"' == token[0] == token[-1]:
                 token = token[1:-1].replace(r'\"', '"')
             return TERM(token)
+        raise RollBack
         return False
 
     def _searchTerm(self):
@@ -197,7 +205,10 @@ class CQLParser:
         we use:
         scopedClause ::= searchClause booleanGroup scopedClause | searchClause
         """
-        head = self._searchClause() # eq to self._tryTerms(self._searchClause)
+        try:
+            head = self._searchClause() # eq to self._tryTerms(self._searchClause)
+        except (RollBack, IndexError):
+            head = False
         if not head:
             return False
         tail = self._tryTerms(
@@ -222,14 +233,14 @@ class CQLParser:
 
     def _boolean(self):
         """boolean ::= 'and' | 'or' | 'not' | 'prox'"""
-        if not self._tokens.hasNext():
+        try:
+            token = self._tokens.peek()
+        except IndexError:
             return False
-        token = self._tokens.peek().lower()
+        if token.lower() in ['and', 'or', 'not']:
+            return BOOLEAN(self._tokens.next().lower())
         if token == 'prox':
             raise UnsupportedCQL("booleanGroup: 'prox'")
-        if token in ['and', 'or', 'not']:
-            return BOOLEAN(self._tokens.next().lower())
-        return False
 
     def _booleanGroup(self):
         """
@@ -262,7 +273,10 @@ class CQLParser:
             if not self._tokens.safeNext() == ')':
                 return False
             return result
-        result = self._construct(SEARCH_CLAUSE, self._index, self._relation, self._searchTerm)
+        try:
+            result = self._construct(SEARCH_CLAUSE, self._index, self._relation, self._searchTerm)
+        except (RollBack, IndexError):
+            result = False
         if not result:
             searchTerm = self._searchTerm()
             if searchTerm:
