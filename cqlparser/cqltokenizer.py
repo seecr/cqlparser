@@ -83,12 +83,9 @@ class TokenStack:
             return None
 
     def next(self):
-        try:
-            result = self._tokens[self._pointer]
-            self._pointer += 1
-            return result
-        except IndexError:
-            raise StopIteration
+        result = self._tokens[self._pointer]
+        self._pointer += 1
+        return result
 
     def safeNext(self):
         try:

@@ -124,12 +124,15 @@ class CQLParser:
     def parse(self):
         if not self._tokens.hasNext():
             raise CQLParseException('No tokens found, at least one token expected.')
-        result = self._cqlQuery()
+        try:
+            result = self._cqlQuery()
+        except (RollBack, IndexError):
+            result = False
         if self._tokens.hasNext():
             raise CQLParseException('Unexpected token after parsing ([%s], %s).' % (self._tokens.next(), str(result)))
         return result
 
-    def _tryTerms(self, *termFunctions):
+    def _construct(self, constructor, *termFunctions):
         result = []
         self._tokens.bookmark()
         for termFunction in termFunctions:
@@ -137,18 +140,9 @@ class CQLParser:
                 term = termFunction()
             except (RollBack, IndexError):
                 self._tokens.revertToBookmark()
-                raise
-            if not term:
-                self._tokens.revertToBookmark()
-                return False
+                raise RollBack
             result.append(term)
         self._tokens.dropBookmark()
-        return result
-
-    def _construct(self, constructor, *termFunctions):
-        result = self._tryTerms(*termFunctions)
-        if not result:
-            return False
         return constructor(*result)
 
     def _term(self):
@@ -158,20 +152,13 @@ class CQLParser:
                 token = token[1:-1].replace(r'\"', '"')
             return TERM(token)
         raise RollBack
-        return False
 
     def _searchTerm(self):
-        term = self._term()
-        if term:
-            return SEARCH_TERM(term)
-        return False
+        return SEARCH_TERM(self._term())
 
     def _index(self):
         """index ::= term"""
-        term = self._term()
-        if term:
-            return INDEX(term)
-        return False
+        return INDEX(self._term())
 
     def _token(self, aToken, caseSensitive = True):
         return Token(self, aToken, caseSensitive)
@@ -205,18 +192,15 @@ class CQLParser:
         we use:
         scopedClause ::= searchClause booleanGroup scopedClause | searchClause
         """
+        head = self._searchClause()
         try:
-            head = self._searchClause() # eq to self._tryTerms(self._searchClause)
-        except (RollBack, IndexError):
-            head = False
-        if not head:
-            return False
-        tail = self._tryTerms(
-                self._booleanGroup,
-                self._scopedClause)
-        if tail:
-            return self.__swapScopedClauses(*([head] + tail))
-        return SCOPED_CLAUSE(head)
+            self._tokens.bookmark()
+            boolGroup = self._booleanGroup()
+            scopedClause = self._scopedClause()
+            return self.__swapScopedClauses(head, boolGroup, scopedClause)
+        except (RollBack, IndexError, StopIteration):
+            self._tokens.revertToBookmark()
+            return SCOPED_CLAUSE(head)
 
     def __swapScopedClauses(self, searchClause, booleanGroup, scopedClause):
         if booleanGroup.children()[0] not in ['and', 'not']:
@@ -233,14 +217,12 @@ class CQLParser:
 
     def _boolean(self):
         """boolean ::= 'and' | 'or' | 'not' | 'prox'"""
-        try:
-            token = self._tokens.peek()
-        except IndexError:
-            return False
+        token = self._tokens.peek()
         if token.lower() in ['and', 'or', 'not']:
             return BOOLEAN(self._tokens.next().lower())
         if token == 'prox':
             raise UnsupportedCQL("booleanGroup: 'prox'")
+        raise RollBack
 
     def _booleanGroup(self):
         """
@@ -248,14 +230,12 @@ class CQLParser:
         we use:
         booleanGroup ::= boolean modifierList | boolean
         """
-        if not self._tokens.hasNext():
-            return False
-        head = self._boolean() # eq to self._tryTerms(self._boolean)
-        if not head:
-            return False
-        tail = self._modifierList() # eq to self._tryTerms(self._modifierList)
-        if tail:
+        head = self._boolean()
+        try:
+            self._modifierList()
             raise UnsupportedCQL("modifierLists on booleanGroups not supported")
+        except (RollBack, IndexError):
+            pass
         return head
 
     def _searchClause(self):
@@ -265,24 +245,16 @@ class CQLParser:
             index relation searchTerm |
             searchTerm
         """
-        if not self._tokens.hasNext():
-            return False
         if self._tokens.peek() == "(":
-            self._tokens.next()
+            self._tokens.next() # '('
             result = SEARCH_CLAUSE(self._cqlQuery())
-            if not self._tokens.safeNext() == ')':
-                return False
+            if self._tokens.safeNext() != ')':
+                raise RollBack
             return result
         try:
-            result = self._construct(SEARCH_CLAUSE, self._index, self._relation, self._searchTerm)
+            return self._construct(SEARCH_CLAUSE, self._index, self._relation, self._searchTerm)
         except (RollBack, IndexError):
-            result = False
-        if not result:
-            searchTerm = self._searchTerm()
-            if searchTerm:
-                return SEARCH_CLAUSE(searchTerm)
-            return False
-        return result
+            return SEARCH_CLAUSE(self._searchTerm())
 
     def _relation(self):
         """
@@ -291,22 +263,15 @@ class CQLParser:
         relation ::= comparitor modifierList | comparitor
         """
         comparitor = self._comparitor()
-        if not comparitor:
-            return False
-        if self._tokens.safePeek() == '/':
-            modifierList = self._modifierList()
-            return RELATION(comparitor, modifierList)
-
+        if self._tokens.peek() == '/':
+            return RELATION(comparitor, self._modifierList())
         return RELATION(comparitor)
 
     def _modifierName(self):
-        if not self._tokens.hasNext():
-            return False
-
         modifierName = self._tokens.next()
-        if modifierName not in self._supportedModifierNames:
-            raise UnsupportedCQL("Unsupported ModifierName: %s" % modifierName)
-        return TERM(modifierName)
+        if modifierName in self._supportedModifierNames:
+            return TERM(modifierName)
+        raise UnsupportedCQL("Unsupported ModifierName: %s" % modifierName)
 
     def _comparitor(self):
         """
@@ -314,26 +279,25 @@ class CQLParser:
         comparitorSymbol ::= '=' | '>' | '<' | '>=' | '<=' | '<>'
         we use a shortcut since most of this is not supported
         """
-        if not self._tokens.hasNext():
-            return False
-        token = self._tokens.peek().lower()
+        token = self._tokens.next()
+        if token in self._supportedComparitors:
+            return COMPARITOR(token)
         if not token in DEFAULTCOMPARITORS:
-            return False
-        if token not in self._supportedComparitors:
+            raise RollBack
+        else:
             raise UnsupportedCQL('Unsupported comparitor: %s' % token)
-        return COMPARITOR(self._tokens.next())
 
     def _modifierList(self):
         """
         modifierList ::=  modifierList modifier | modifier
         """
-        return self._construct(MODIFIERLIST, self._modifier)
+        return MODIFIERLIST(self._modifier())
 
     def _modifier(self):
         """
         modifier ::= '/' modifierName [comparitorSymbol modifierValue]
         """
-        slashToken = self._tokens.safeNext()
-        if not slashToken == '/':
-            return False
+        if self._tokens.peek() != '/':
+            raise RollBack
+        self._tokens.next()
         return self._construct(MODIFIER, self._modifierName, self._comparitor, self._modifierValue)

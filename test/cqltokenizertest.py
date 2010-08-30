@@ -75,7 +75,7 @@ class CQLTokenizerTest(unittest.TestCase):
         try:
             stack.next()
             self.fail()
-        except StopIteration:
+        except IndexError:
             pass
         self.assertEquals(None, stack.safeNext())
 
