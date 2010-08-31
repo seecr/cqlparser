@@ -145,11 +145,11 @@ class CQLParser:
     def _term(self):
         token = self._tokens[self._top]
         self._top += 1
-        if not token[0] in ['(', ')', '>', '=', '<', '/']:
-            if '"' == token[0]: # == token[-1]:
-                token = token[1:-1].replace(r'\"', '"')
-            return TERM(token)
-        raise RollBack
+        if token[0] == '"':
+            token = token[1:-1].replace(r'\"', '"')
+        elif token[0] in '()=></':
+            raise RollBack
+        return TERM(token)
 
     def _searchTerm(self):
         return SEARCH_TERM(self._term())
