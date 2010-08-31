@@ -14,7 +14,9 @@ class SpeedTest(CQ2TestCase):
         doParse()
         t1 = time()
         #profile(doParse, runKCacheGrind = True)
-        self.assertTiming(0.101, t1-t0, 0.103) # rewrote everything to try/except
+        self.assertTiming(0.063, t1-t0, 0.065) # inlined TokenStack (way less code!)
+        #self.assertTiming(0.074, t1-t0, 0.078) # let re do the tokenizing
+        #self.assertTiming(0.101, t1-t0, 0.103) # rewrote everything to try/except
         #self.assertTiming(0.115, t1-t0, 0.120) # inlined _tryTerm and some _construct
         #self.assertTiming(0.132, t1-t0, 0.136) # inlined _tryTerm and some _construct
         #self.assertTiming(0.141, t1-t0, 0.149) # optimized _tryTerms

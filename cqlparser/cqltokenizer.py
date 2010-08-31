@@ -38,7 +38,7 @@ tokenSplitter = re.compile(r'\s*(%s)' % ('|'.join(tokens)))
 TOKEN_GROUPNR = 1 # the one and only group.
 
 def tokenStack(cqlQuery):
-    return TokenStack(CQLTokenizer(cqlQuery))
+    return CQLTokenizer(cqlQuery).all()
 
 class CQLTokenizerException(Exception):
     pass
@@ -52,6 +52,9 @@ class CQLTokenizer:
     def __iter__(self):
         return self
 
+    def all(self):
+        return [t[0] for t in tokenSplitter.findall(self._text) if t]
+
     def next(self):
         match = tokenSplitter.match(self._text[self._pointer:])
         if match == None:
@@ -63,18 +66,19 @@ class CQLTokenizer:
 
 class TokenStack:
     def __init__(self, tokenizer):
-        self._tokens = list(tokenizer)
+        #self._tokens = list(tokenizer)
+        self._tokens = tokenizer.all()
         self._pointer = 0
         self._bookmarks = []
 
-    def prev(self):
-        if self._pointer <= 0:
-            raise ProgrammingError
-        self._pointer += -1
-        return self._tokens[self._pointer]
+    #def prev(self):
+    #    if self._pointer <= 0:
+    #        raise ProgrammingError
+    #    self._pointer += -1
+    #    return self._tokens[self._pointer]
 
     def peek(self):
-            return self._tokens[self._pointer]
+        return self._tokens[self._pointer]
 
     def safePeek(self):
         try:
@@ -103,6 +107,9 @@ class TokenStack:
 
     def revertToBookmark(self):
         self._pointer = self._bookmarks.pop()
+
+    def revertBookmark(self):
+        self._pointer = self._bookmarks[-1]
 
     def dropBookmark(self):
         self._bookmarks.pop()
