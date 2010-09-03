@@ -40,7 +40,7 @@ class SpeedTest(CQ2TestCase):
     def testPartialVisitor(self):
         class PartialVisitor(CqlVisitor):
             def visitINDEX(self, node):
-                return self.visitChildren(node)
+                return node.visitChildren(self)
         p = parseString(open('ridiculouslongquery.txt').read().strip())
         def doVisit():
             for i in range(10):

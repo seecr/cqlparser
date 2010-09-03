@@ -29,26 +29,23 @@ class CqlVisitor(object):
     def visit(self):
         return self._root.accept(self)
 
-    def visitChildren(self, node):
-        return [child.accept(self) for child in node.children]
-
     def visitCQL_QUERY(self, node):
-        return self.visitChildren(node)
+        return node.visitChildren(self)
 
     def visitSCOPED_CLAUSE(self, node):
-        return self.visitChildren(node)
+        return node.visitChildren(self)
 
     def visitSEARCH_CLAUSE(self, node):
-        return self.visitChildren(node)
+        return node.visitChildren(self)
 
     def visitRELATION(self, node):
-        return self.visitChildren(node)
+        return node.visitChildren(self)
 
     def visitMODIFIERLIST(self, node):
-        return self.visitChildren(node)
+        return node.visitChildren(self)
 
     def visitMODIFIER(self, node):
-        return self.visitChildren(node)
+        return node.visitChildren(self)
 
     # TERMINALS
     def visitINDEX(self, node):

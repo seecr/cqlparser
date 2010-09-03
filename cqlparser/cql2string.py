@@ -29,15 +29,15 @@ quottableTermChars = compile(r'[\"\(\)\>\=\<\/\s]')
 
 class Cql2StringVisitor(CqlVisitor):
     def visitSEARCH_CLAUSE(self, node):
-        children = self.visitChildren(node)
+        children = node.visitChildren(self)
         return ''.join(children)
 
     def visitMODIFIER(self, node):
-        children = self.visitChildren(node)
+        children = node.visitChildren(self)
         return '/'+''.join(children)
 
     def visitRELATION(self, node):
-        children = self.visitChildren(node)
+        children = node.visitChildren(self)
         result = ''.join(children)
         if result == '=':
             return result
@@ -53,7 +53,7 @@ class Cql2StringVisitor(CqlVisitor):
         return term
 
     def _joinChildren(self, node):
-        children = self.visitChildren(node)
+        children = node.visitChildren(self)
         return ' '.join(children)
 
     visitSEARCH_TERM = _joinChildren

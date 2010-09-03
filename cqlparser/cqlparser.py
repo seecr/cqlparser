@@ -69,9 +69,8 @@ class CQLAbstractSyntaxNode(object):
     def __hash__(self):
         return hash(self.__class__) ^ hash(self.children)
 
-    def replaceChildren(self, *args):
-        self.children = args
-
+    def visitChildren(self, visitor):
+        return [child.accept(visitor) for child in self.children]
 
 for aClass in ['SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDEX', 'RELATION', 'COMPARITOR', 'MODIFIERLIST', 'MODIFIER', 'TERM', 'IDENTIFIER', 'CQL_QUERY']:
     exec("""class %s(CQLAbstractSyntaxNode):
