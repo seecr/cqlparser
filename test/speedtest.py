@@ -1,6 +1,6 @@
 from cq2utils import CQ2TestCase
 from cq2utils.profileit import profile
-from cqlparser import parseString, cql2string, CqlIdentityVisitor
+from cqlparser import parseString, cql2string, CqlIdentityVisitor, CqlVisitor
 from time import time
 
 class SpeedTest(CQ2TestCase):
@@ -24,9 +24,8 @@ class SpeedTest(CQ2TestCase):
         #self.assertTiming(0.155, t1-t0, 0.165) # replaced Stack with []
         #self.assertTiming(0.180, t1-t0, 0.190) # start
 
-    def testVisitor(self):
+    def testIdentityVisitor(self):
         p = parseString(open('ridiculouslongquery.txt').read().strip())
-        #print p.prettyPrint()
         def doVisit():
             for i in range(10):
                 CqlIdentityVisitor(p).visit()
@@ -34,6 +33,20 @@ class SpeedTest(CQ2TestCase):
         doVisit()
         t1 = time()
         #profile(doVisit, runKCacheGrind = True)
-        self.assertTiming(0.064, t1-t0, 0.068) # replaced children() attr access and replaced tuple by list
+        self.assertTiming(0.050, t1-t0, 0.053) # made visitXYZ() optional
+        #self.assertTiming(0.064, t1-t0, 0.068) # replaced children() attr access and replaced tuple by list
         #self.assertTiming(0.100, t1-t0, 0.110) # start
 
+    def testPartialVisitor(self):
+        class PartialVisitor(CqlVisitor):
+            def visitINDEX(self, node):
+                return self.visitChildren(node)
+        p = parseString(open('ridiculouslongquery.txt').read().strip())
+        def doVisit():
+            for i in range(10):
+                PartialVisitor(p).visit()
+        t0 = time()
+        doVisit()
+        t1 = time()
+        profile(doVisit, runKCacheGrind = True)
+        self.assertTiming(0.021, t1-t0, 0.024) 

@@ -75,29 +75,22 @@ for aClass in ['SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDE
     exec("""class %s(CQLAbstractSyntaxNode):
         __slots__ = []
         def accept(self, visitor):
-            try:
-                return visitor.visit%s(self)
-            except AttributeError, e:
-                print 'MISSING', 'visit'+self.__class__.__name__, 'on', visitor, e
-                return [child.accept(visitor) for child in self.children]
+            return visitor.visit%s(self)
 """ % (aClass, aClass))
 
-#class TERM(CQLAbstractSyntaxNode):
-#    __slots__ = '_term'
+#class SEARCH_TERM(CQLAbstractSyntaxNode):
+#    __slots__ = ['_term']
 #    def __init__(self, term):
 #        self._term = term
+#    def children_get(self):
+#        return (self._term,)
+#    def children_set(self, children):
+#        print children
+#        self._term = children[0]
+#    children = property(children_get, children_set)
+#
 #    def accept(self, visitor):
-#        return visitor.visitTERM(self)
-#    def children(self):
-#        return [self._term]
-#    def __str__(self):
-#        return "TERM('%s')" % self._term
-#    def __eq__(self, other):
-#        return self.__class__ == other.__class__ and self._term == other._term
-#    def prettyPrint(self, offset=0):
-#        return ' ' * offset * 4 + self.__str__()
-#    def __hash__(self):
-#        return hash(self.__class__) ^ hash(self._term)
+#        return visitor.visitSEARCH_TERM(self)
 
 def findLastScopedClause(aNode):
     if len(aNode.children) == 1 and type(aNode) == SCOPED_CLAUSE:
