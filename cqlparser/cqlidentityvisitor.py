@@ -23,42 +23,36 @@
 ## end license ##
 
 from cqlvisitor import CqlVisitor
+from cqlparser import CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, MODIFIERLIST, MODIFIER, TERM, IDENTIFIER
+
 
 class CqlIdentityVisitor(CqlVisitor):
-    def visitChildren(self, node):
-        return [child.accept(self) for child in node.children]
-
-    def copyChildren(self, node):
-        return node.__class__(*self.visitChildren(node))
 
     def visitSEARCH_TERM(self, node):
-        return self.copyChildren(node)
+        return SEARCH_TERM(node.children[0].accept(self))
 
     def visitSEARCH_CLAUSE(self, node):
-        return self.copyChildren(node)
+        return SEARCH_CLAUSE(*node.visitChildren(self))
 
     def visitSCOPED_CLAUSE(self, node):
-        return self.copyChildren(node)
+        return SCOPED_CLAUSE(*node.visitChildren(self))
 
     def visitCQL_QUERY(self, node):
-        return self.copyChildren(node)
+        return CQL_QUERY(*node.visitChildren(self))
 
     def visitRELATION(self, node):
-        return self.copyChildren(node)
+        return RELATION(*node.visitChildren(self))
 
     def visitINDEX(self, node):
-        return self.copyChildren(node)
+        return INDEX(node.children[0].accept(self))
 
     # terminals
-    def _copy(self, node):
-        return node.__class__(*node.children)
-    
     def visitCOMPARITOR(self, node):
-        return self._copy(node)
+        return COMPARITOR(node.children[0])
 
     def visitBOOLEAN(self, node):
-        return self._copy(node)
+        return BOOLEAN(node.children[0])
     
     def visitTERM(self, node):
-        return self._copy(node)
+        return TERM(node.children[0])
 

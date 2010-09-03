@@ -33,7 +33,8 @@ class SpeedTest(CQ2TestCase):
         doVisit()
         t1 = time()
         #profile(doVisit, runKCacheGrind = True)
-        self.assertTiming(0.050, t1-t0, 0.053) # made visitXYZ() optional
+        self.assertTiming(0.039, t1-t0, 0.041) # optimized identityvisitor
+        #self.assertTiming(0.050, t1-t0, 0.053) # made visitXYZ() optional
         #self.assertTiming(0.064, t1-t0, 0.068) # replaced children() attr access and replaced tuple by list
         #self.assertTiming(0.100, t1-t0, 0.110) # start
 
