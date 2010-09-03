@@ -26,23 +26,39 @@ from cqlvisitor import CqlVisitor
 
 class CqlIdentityVisitor(CqlVisitor):
     def visitChildren(self, node):
-        return node.__class__(*CqlVisitor.visitChildren(self, node))
+        return [child.accept(self) for child in node.children]
+
+    def copyChildren(self, node):
+        return node.__class__(*self.visitChildren(node))
 
     def visitSEARCH_TERM(self, node):
-        assert len(node.children()) == 1
-        return self.visitChildren(node)
+        return self.copyChildren(node)
+
+    def visitSEARCH_CLAUSE(self, node):
+        return self.copyChildren(node)
+
+    def visitSCOPED_CLAUSE(self, node):
+        return self.copyChildren(node)
+
+    def visitCQL_QUERY(self, node):
+        return self.copyChildren(node)
+
+    def visitRELATION(self, node):
+        return self.copyChildren(node)
+
+    def visitINDEX(self, node):
+        return self.copyChildren(node)
 
     # terminals
     def _copy(self, node):
-        return node.__class__(*node.children())
+        return node.__class__(*node.children)
     
     def visitCOMPARITOR(self, node):
-        assert len(node.children()) == 1
         return self._copy(node)
 
     def visitBOOLEAN(self, node):
-        assert len(node.children()) == 1
         return self._copy(node)
     
     def visitTERM(self, node):
         return self._copy(node)
+

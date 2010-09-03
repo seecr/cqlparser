@@ -38,52 +38,71 @@ class RollBack(Exception):
     pass
 
 class CQLAbstractSyntaxNode(object):
+    __slots__ = ['children']
 
     def __init__(self, *args):
-        self._children = args
+        self.children = args
 
     def __repr__(self):
         return self.__str__()
 
     def __str__(self):
-        return "%s(%s)" % (str(self.__class__).split('.')[-1][:-2], ", ".join(map(repr, self._children)))
+        return "%s(%s)" % (str(self.__class__).split('.')[-1][:-2], ", ".join(map(repr, self.children)))
 
     def prettyPrint(self, offset=0):
         spaces = offset * 4 * ' '
-        if len(self._children) == 1 and type(self._children[0] ) == str:
-            return spaces + str(self.__class__).split('.')[-1][:-2] + "(" + repr(self._children[0]) + ")"
+        if len(self.children) == 1 and type(self.children[0] ) == str:
+            return spaces + str(self.__class__).split('.')[-1][:-2] + "(" + repr(self.children[0]) + ")"
         result = [spaces + str(self.__class__).split('.')[-1][:-2] + "("]
-        result.append(',\n'.join(child.prettyPrint(offset+1) for child in self._children if type(child)!=str))
+        result.append(',\n'.join(child.prettyPrint(offset+1) for child in self.children if type(child)!=str))
         result.append(spaces + ")")
         return '\n'.join(result)
 
     def __eq__(self, other):
-        return self.__class__ == other.__class__ and self._children == other._children
+        return self.__class__ == other.__class__ and self.children == other.children
 
     def __ne__(self, other):
         return not self.__eq__(other)
 
     def __hash__(self):
-        return hash(self.__class__) ^ hash(self._children)
-
-    def children(self):
-        return self._children
+        return hash(self.__class__) ^ hash(self.children)
 
     def replaceChildren(self, *args):
-        self._children = args
+        self.children = args
+
 
 for aClass in ['SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDEX', 'RELATION', 'COMPARITOR', 'MODIFIERLIST', 'MODIFIER', 'TERM', 'IDENTIFIER', 'CQL_QUERY']:
     exec("""class %s(CQLAbstractSyntaxNode):
-    def accept(self, visitor):
-        return visitor.visit%s(self)
-    def name(self):
-        return "%s"
-""" % (aClass, aClass, aClass))
+        __slots__ = []
+        def accept(self, visitor):
+            try:
+                return visitor.visit%s(self)
+            except AttributeError, e:
+                print 'MISSING', 'visit'+self.__class__.__name__, 'on', visitor, e
+                return [child.accept(visitor) for child in self.children]
+""" % (aClass, aClass))
+
+#class TERM(CQLAbstractSyntaxNode):
+#    __slots__ = '_term'
+#    def __init__(self, term):
+#        self._term = term
+#    def accept(self, visitor):
+#        return visitor.visitTERM(self)
+#    def children(self):
+#        return [self._term]
+#    def __str__(self):
+#        return "TERM('%s')" % self._term
+#    def __eq__(self, other):
+#        return self.__class__ == other.__class__ and self._term == other._term
+#    def prettyPrint(self, offset=0):
+#        return ' ' * offset * 4 + self.__str__()
+#    def __hash__(self):
+#        return hash(self.__class__) ^ hash(self._term)
 
 def findLastScopedClause(aNode):
-    if len(aNode._children) == 1 and type(aNode) == SCOPED_CLAUSE:
+    if len(aNode.children) == 1 and type(aNode) == SCOPED_CLAUSE:
         return aNode
-    return findLastScopedClause(aNode._children[-1])
+    return findLastScopedClause(aNode.children[-1])
 
 def parseString(cqlString, **kwargs):
     parser = CQLParser(CQLTokenizer(cqlString), **kwargs)
@@ -190,23 +209,23 @@ class CQLParser:
         we use:
         scopedClause ::= searchClause booleanGroup scopedClause | searchClause
         """
-        head = self._searchClause()
+        searchClause = self._searchClause()
         try:
             bookmark = self._top
             boolGroup = self._booleanGroup()
             scopedClause = self._scopedClause()
-            return self.__swapScopedClauses(head, boolGroup, scopedClause)
+            return self.__swapScopedClauses(searchClause, boolGroup, scopedClause)
         except (RollBack, IndexError, StopIteration):
             self._top = bookmark
-            return SCOPED_CLAUSE(head)
+            return SCOPED_CLAUSE(searchClause)
 
     def __swapScopedClauses(self, searchClause, booleanGroup, scopedClause):
-        if booleanGroup.children()[0] not in ['and', 'not']:
+        if booleanGroup.children[0] not in ['and', 'not']:
             return SCOPED_CLAUSE(searchClause, booleanGroup, scopedClause)
-        if len(scopedClause.children()) == 3:
-            childLeft = scopedClause.children()[0]
-            childBoolean = scopedClause.children()[1]
-            childRight = scopedClause.children()[2]
+        if len(scopedClause.children) == 3:
+            childLeft = scopedClause.children[0]
+            childBoolean = scopedClause.children[1]
+            childRight = scopedClause.children[2]
             nr2 = SCOPED_CLAUSE(searchClause, booleanGroup, childLeft)
             result = SCOPED_CLAUSE(nr2, childBoolean, childRight)
         else:

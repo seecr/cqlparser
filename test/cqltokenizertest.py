@@ -24,10 +24,9 @@
 
 import unittest
 import re
-from cqlparser.cqltokenizer import CQLTokenizer, CQLTokenizerException, tokenStack
+from cqlparser.cqltokenizer import CQLTokenizer, CQLTokenizerException
 
 def tokenize(s):
-    #return list(CQLTokenizer(s))
     return CQLTokenizer(s).all()
 
 class CQLTokenizerTest(unittest.TestCase):
@@ -59,72 +58,6 @@ class CQLTokenizerTest(unittest.TestCase):
         except CQLTokenizerException, e:
             pass
 
-    def XXXXtestTokenStackOne(self):
-        stack = tokenStack('term')
-        self.assertTrue(stack.hasNext())
-        self.assertEquals('term', stack.peek())
-        self.assertEquals('term', stack.next())
-        self.assertFalse(stack.hasNext())
-        #self.assertEquals('term', stack.prev())
-        #self.assertTrue(stack.hasNext())
-        #self.assertEquals('term', stack.next())
-        try:
-            stack.peek()
-            self.fail()
-        except IndexError:
-            pass
-        try:
-            stack.next()
-            self.fail()
-        except IndexError:
-            pass
-        self.assertEquals(None, stack.safeNext())
-
-
-    def XXXtestTokenStackTwo(self):
-        stack = tokenStack('term term2')
-        self.assertTrue(stack.hasNext())
-        self.assertEquals('term', stack.next())
-        self.assertTrue(stack.hasNext())
-        self.assertEquals('term2', stack.next())
-        self.assertFalse(stack.hasNext())
-
-    def XXXtestTokenStackBookmarksSingleCase(self):
-        stack = tokenStack('term0 term1 term2 term3')
-        self.assertEquals('term0', stack.peek())
-        stack.bookmark()
-        stack.next()
-        stack.next()
-        stack.revertToBookmark()
-        self.assertEquals('term0', stack.peek())
-
-    def XXXtestTokenStackBookmarksAreStack(self):
-        stack = tokenStack('term0 term1 term2 term3')
-        self.assertEquals('term0', stack.peek())
-        stack.bookmark()
-        stack.next()
-        self.assertEquals('term1', stack.peek())
-        stack.bookmark()
-        stack.next()
-        stack.revertToBookmark()
-        self.assertEquals('term1', stack.peek())
-        stack.revertToBookmark()
-        self.assertEquals('term0', stack.peek())
-
-    def XXXtestTokenStackBookmarksCanBeDropped(self):
-        stack = tokenStack('term0 term1 term2 term3')
-        self.assertEquals('term0', stack.peek())
-        stack.bookmark()
-        stack.next()
-        self.assertEquals('term1', stack.peek())
-        stack.bookmark()
-        stack.next()
-        self.assertEquals('term2', stack.peek())
-        stack.dropBookmark()
-        self.assertEquals('term2', stack.peek())
-        stack.revertToBookmark()
-        self.assertEquals('term0', stack.peek())
-
     def testBugReportedByErik(self):
-        stack = tokenStack('lom.general.title="en" AND (lom.general.title="green" OR lom.general.title="red")')
+        stack = CQLTokenizer('lom.general.title="en" AND (lom.general.title="green" OR lom.general.title="red")').all()
         self.assertEquals(['lom.general.title', '=', '"en"', 'AND', '(', 'lom.general.title', '=', '"green"', 'OR', 'lom.general.title', '=', '"red"', ')'], stack)

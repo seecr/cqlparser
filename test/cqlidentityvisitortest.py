@@ -33,7 +33,7 @@ def allnodes(node):
     while index < len(result):
         new_index = len(result)
         for node in result[index:]:
-            result.extend([n for n in node.children() if hasattr(n, 'children')])
+            result.extend([n for n in node.children if hasattr(n, 'children')])
         index = new_index
     return result
 

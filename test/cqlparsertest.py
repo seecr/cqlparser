@@ -292,7 +292,7 @@ class CQLParserTest(unittest.TestCase):
         t.replaceChildren('otherterm')
         self.assertEquals("TERM('otherterm')", str(t))
         q = parseString('field = value')
-        s = q.children()[0].children()[0] #CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE ..
+        s = q.children[0].children[0] #CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE ..
         s.replaceChildren(INDEX(TERM('index')), RELATION(COMPARITOR('exact')), SEARCH_TERM(TERM('value')))
         self.assertEquals('index exact value', cql2string(q))
 

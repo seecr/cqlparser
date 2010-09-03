@@ -37,9 +37,6 @@ tokens = [ r'\(', r'\)', '>=', '<>', '<=', '>', '<', r'\=', r'\/', charString2, 
 tokenSplitter = re.compile(r'\s*(%s)' % ('|'.join(tokens)))
 TOKEN_GROUPNR = 1 # the one and only group.
 
-def tokenStack(cqlQuery):
-    return CQLTokenizer(cqlQuery).all()
-
 class CQLTokenizerException(Exception):
     pass
 

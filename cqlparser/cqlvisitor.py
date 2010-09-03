@@ -30,47 +30,38 @@ class CqlVisitor(object):
         return self._root.accept(self)
 
     def visitChildren(self, node):
-        return tuple(child.accept(self) for child in node.children())
+        return [child.accept(self) for child in node.children]
 
-    def visitCQL_QUERY(self, node):
-        assert len(node.children()) == 1
+    def XvisitCQL_QUERY(self, node):
         return self.visitChildren(node)
 
-    def visitSCOPED_CLAUSE(self, node):
+    def XvisitSCOPED_CLAUSE(self, node):
         return self.visitChildren(node)
 
-    def visitSEARCH_CLAUSE(self, node):
+    def XvisitSEARCH_CLAUSE(self, node):
         return self.visitChildren(node)
 
-    def visitINDEX(self, node):
-        assert len(node.children()) == 1
+    def XvisitINDEX(self, node):
         return self.visitChildren(node)
 
-    def visitRELATION(self, node):
+    def XvisitRELATION(self, node):
         return self.visitChildren(node)
 
-    def visitMODIFIERLIST(self, node):
+    def XvisitMODIFIERLIST(self, node):
         return self.visitChildren(node)
 
-    def visitMODIFIER(self, node):
-        assert len(node.children()) == 3
+    def XvisitMODIFIER(self, node):
         return self.visitChildren(node)
 
     # TERMINALS
     def visitCOMPARITOR(self, node):
-        assert len(node.children()) == 1
-        return node.children()[0]
+        return node.children[0]
 
     def visitBOOLEAN(self, node):
-        assert len(node.children()) == 1
-        return node.children()[0].upper()
+        return node.children[0].upper()
 
     def visitSEARCH_TERM(self, node):
-        assert len(node.children()) == 1
-        term = node.children()[0].accept(self)
-        #if term[0] == '"':
-            #return term[1: -1] #.replace(r'\"', '"')
-        return term
+        return node.children[0].accept(self)
 
     def visitTERM(self, node):
-        return node.children()[0]
+        return node.children[0]
