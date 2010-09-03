@@ -41,9 +41,6 @@ class CqlVisitor(object):
     def visitSEARCH_CLAUSE(self, node):
         return self.visitChildren(node)
 
-    def visitINDEX(self, node):
-        return self.visitChildren(node)
-
     def visitRELATION(self, node):
         return self.visitChildren(node)
 
@@ -54,6 +51,9 @@ class CqlVisitor(object):
         return self.visitChildren(node)
 
     # TERMINALS
+    def visitINDEX(self, node):
+        return node.children[0].accept(self)
+
     def visitCOMPARITOR(self, node):
         return node.children[0]
 

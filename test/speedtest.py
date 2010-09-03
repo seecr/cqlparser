@@ -48,5 +48,5 @@ class SpeedTest(CQ2TestCase):
         t0 = time()
         doVisit()
         t1 = time()
-        profile(doVisit, runKCacheGrind = True)
+        #profile(doVisit, runKCacheGrind = True)
         self.assertTiming(0.021, t1-t0, 0.024) 

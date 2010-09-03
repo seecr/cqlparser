@@ -47,14 +47,16 @@ class CQLAbstractSyntaxNode(object):
         return self.__str__()
 
     def __str__(self):
-        return "%s(%s)" % (str(self.__class__).split('.')[-1][:-2], ", ".join(map(repr, self.children)))
+        return "%s(%s)" % (self.__class__.__name__, ", ".join(repr(c) for c in self.children))
 
     def prettyPrint(self, offset=0):
         spaces = offset * 4 * ' '
+        classname = self.__class__.__name__ 
         if len(self.children) == 1 and type(self.children[0] ) == str:
-            return spaces + str(self.__class__).split('.')[-1][:-2] + "(" + repr(self.children[0]) + ")"
-        result = [spaces + str(self.__class__).split('.')[-1][:-2] + "("]
-        result.append(',\n'.join(child.prettyPrint(offset+1) for child in self.children if type(child)!=str))
+            return spaces + classname + "(" + repr(self.children[0]) + ")"
+        result = [spaces + classname + "("]
+        result.append(',\n'.join(child.prettyPrint(offset + 1) for child
+            in self.children if type(child) != str))
         result.append(spaces + ")")
         return '\n'.join(result)
 
@@ -77,20 +79,6 @@ for aClass in ['SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDE
         def accept(self, visitor):
             return visitor.visit%s(self)
 """ % (aClass, aClass))
-
-#class SEARCH_TERM(CQLAbstractSyntaxNode):
-#    __slots__ = ['_term']
-#    def __init__(self, term):
-#        self._term = term
-#    def children_get(self):
-#        return (self._term,)
-#    def children_set(self, children):
-#        print children
-#        self._term = children[0]
-#    children = property(children_get, children_set)
-#
-#    def accept(self, visitor):
-#        return visitor.visitSEARCH_TERM(self)
 
 def findLastScopedClause(aNode):
     if len(aNode.children) == 1 and type(aNode) == SCOPED_CLAUSE:
