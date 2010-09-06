@@ -43,6 +43,6 @@ class CQLTokenizerException(Exception):
 
 def tokenize(text):
     if not completeline.match(text):
-        raise CQLTokenizerException("Unrecognized token at EOF: ") 
-    return [t for t in tokenSplitter.findall(text) if t]
+        raise CQLTokenizerException("Unrecognized token in '%s'" % text.replace("'", r"\'")) 
+    return tokenSplitter.findall(text)
 
