@@ -2,7 +2,7 @@
 #
 #    CQLParser is a parser that builds a parsetree for the given CQL and
 #    can convert this into other formats.
-#    Copyright (C) 2005-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of CQLParser
 #
@@ -53,6 +53,8 @@ class CQLTokenizerTest(unittest.TestCase):
 
     def testUnfinishedLines(self):
         try:
+            #from cqlparser.cqltokenizer import tokenSplitter
+            #print tokenSplitter.findall('"ab" and "cd')
             r = tokenize('ab and "cd')
             self.fail(r)
         except CQLTokenizerException, e:
