@@ -35,21 +35,14 @@ charString2 = r'(?s)\".*?(?:(?<!\\)\")'
 tokens = [ r'\(', r'\)', '>=', '<>', '<=', '>', '<', r'\=', r'\/', charString2, charString1 ]
 
 tokenSplitter = re.compile(r'\s*(%s)' % ('|'.join(tokens)))
-completeline = re.compile(r'^(%s)(\s*(%s))*$' % ('|'.join(tokens), '|'.join(tokens)))
+completeline = re.compile(r'^(\s*(%s))*\s*$' % ('|'.join(tokens)))
 TOKEN_GROUPNR = 1 # the one and only group.
 
 class CQLTokenizerException(Exception):
     pass
 
-class CQLTokenizer:
-
-    def __init__(self, text):
-        self._text = text.strip()
-
-    def all(self):
-        if not self._text:
-            return []
-        if not completeline.match(self._text):
-            raise CQLTokenizerException("Unrecognized token at EOF: ") 
-        return [t for t in tokenSplitter.findall(self._text) if t]
+def tokenize(text):
+    if not completeline.match(text):
+        raise CQLTokenizerException("Unrecognized token at EOF: ") 
+    return [t for t in tokenSplitter.findall(text) if t]
 

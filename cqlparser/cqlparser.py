@@ -23,7 +23,7 @@
 #
 ## end license ##
 
-from cqltokenizer import CQLTokenizer
+from cqltokenizer import tokenize
 
 DEFAULTCOMPARITORS = ['=', '>', '<', '>=', '<=', '<>', '==', 'any', 'all', 'adj', 'within', 'encloses', 'exact']
 
@@ -85,7 +85,7 @@ def findLastScopedClause(aNode):
     return findLastScopedClause(aNode.children[-1])
 
 def parseString(cqlString, **kwargs):
-    parser = CQLParser(CQLTokenizer(cqlString), **kwargs)
+    parser = CQLParser(tokenize(cqlString), **kwargs)
     return parser.parse()
 
 class Token:
@@ -112,9 +112,9 @@ class WildCard:
         return True
 
 class CQLParser:
-    def __init__(self, tokenizer, supportedModifierNames=WildCard(),
+    def __init__(self, tokens, supportedModifierNames=WildCard(),
         supportedComparitors = DEFAULTCOMPARITORS):
-        self._tokens = tokenizer.all()
+        self._tokens = tokens
         self._top = 0
         for term in ['_prefix', '_uri', '_modifierValue']:
             setattr(self, term, self._term)

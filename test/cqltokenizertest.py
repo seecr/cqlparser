@@ -24,10 +24,7 @@
 
 import unittest
 import re
-from cqlparser.cqltokenizer import CQLTokenizer, CQLTokenizerException
-
-def tokenize(s):
-    return CQLTokenizer(s).all()
+from cqlparser.cqltokenizer import tokenize, CQLTokenizerException
 
 class CQLTokenizerTest(unittest.TestCase):
 
@@ -59,5 +56,5 @@ class CQLTokenizerTest(unittest.TestCase):
             pass
 
     def testBugReportedByErik(self):
-        stack = CQLTokenizer('lom.general.title="en" AND (lom.general.title="green" OR lom.general.title="red")').all()
+        stack = tokenize('lom.general.title="en" AND (lom.general.title="green" OR lom.general.title="red")')
         self.assertEquals(['lom.general.title', '=', '"en"', 'AND', '(', 'lom.general.title', '=', '"green"', 'OR', 'lom.general.title', '=', '"red"', ')'], stack)
