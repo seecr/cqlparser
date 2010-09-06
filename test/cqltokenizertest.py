@@ -53,8 +53,6 @@ class CQLTokenizerTest(unittest.TestCase):
 
     def testUnfinishedLines(self):
         try:
-            #from cqlparser.cqltokenizer import tokenSplitter
-            #print tokenSplitter.findall('"ab" and "cd')
             r = tokenize('ab and "cd')
             self.fail(r)
         except CQLTokenizerException, e:

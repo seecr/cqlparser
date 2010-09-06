@@ -30,11 +30,12 @@ import re
 # charString1 is every token except a " ( ) > = < / and spaces
 charString1 = r'[^"()>=<\s/]+'
 # charString2 is every token surrounded by quotes "", except \"
-charString2 = r'(?s)(?P<quot>\").*?((?<!\\)(?P=quot))'
+charString2 = r'(?s)\".*?(?:(?<!\\)\")'
 # tokens are charString1, charString2 or ( ) >= <> <= > < = /
 tokens = [ r'\(', r'\)', '>=', '<>', '<=', '>', '<', r'\=', r'\/', charString2, charString1 ]
 
 tokenSplitter = re.compile(r'\s*(%s)' % ('|'.join(tokens)))
+completeline = re.compile(r'^(%s)(\s*(%s))*$' % ('|'.join(tokens), '|'.join(tokens)))
 TOKEN_GROUPNR = 1 # the one and only group.
 
 class CQLTokenizerException(Exception):
@@ -44,19 +45,11 @@ class CQLTokenizer:
 
     def __init__(self, text):
         self._text = text.strip()
-        self._pointer = 0
-
-    def __iter__(self):
-        return self
 
     def all(self):
-        return [t[0] for t in tokenSplitter.findall(self._text) if t]
+        if not self._text:
+            return []
+        if not completeline.match(self._text):
+            raise CQLTokenizerException("Unrecognized token at EOF: ") 
+        return [t for t in tokenSplitter.findall(self._text) if t]
 
-    def next(self):
-        match = tokenSplitter.match(self._text[self._pointer:])
-        if match == None:
-            if self._pointer != len(self._text):
-                raise CQLTokenizerException("Unrecognized token at EOF: " + self._text[self._pointer:])
-            raise StopIteration
-        self._pointer += match.end(TOKEN_GROUPNR)
-        return match.group(TOKEN_GROUPNR)
