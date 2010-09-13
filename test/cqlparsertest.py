@@ -27,7 +27,7 @@ import unittest
 from cqlparser.cqlparser import CQLParser, parseString, UnsupportedCQL, CQLParseException
 from cqlparser.cqlparser import CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, MODIFIERLIST, MODIFIER, TERM, IDENTIFIER
 import string
-from cqlparser import cql2string
+from cqlparser import cql2string, CQLTokenizerException
 
 class CQLParserTest(unittest.TestCase):
     """http://www.loc.gov/standards/sru/sru1-1archive/cql.html"""
@@ -142,6 +142,7 @@ class CQLParserTest(unittest.TestCase):
     def testUnfinishedQuery(self):
         self.assertException(CQLParseException, 'term and')
         self.assertException(CQLParseException, 'term AND (')
+        self.assertException(CQLTokenizerException, '"=+')
 
     def testIllegalBooleanGroups(self):
         self.assertException(CQLParseException, 'term notanyof_and_or_not_prox term2')

@@ -2,7 +2,7 @@
 #
 #    CQLParser is a parser that builds a parsetree for the given CQL and
 #    can convert this into other formats.
-#    Copyright (C) 2005-2009 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of CQLParser
 #
@@ -25,3 +25,4 @@ from cqlparser import parseString, CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOL
 from cqlvisitor import CqlVisitor
 from cqlidentityvisitor import CqlIdentityVisitor
 from cql2string import cql2string
+from cqltokenizer import CQLTokenizerException
