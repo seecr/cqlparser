@@ -24,7 +24,8 @@
 
 import unittest
 import re
-from cqlparser.cqltokenizer import tokenize, CQLTokenizerException
+from cqlparser.cqltokenizer import tokenize
+from cqlparser import CQLTokenizerException
 
 class CQLTokenizerTest(unittest.TestCase):
 

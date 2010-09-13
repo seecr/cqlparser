@@ -25,3 +25,4 @@ from cqlparser import parseString, CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOL
 from cqlvisitor import CqlVisitor
 from cqlidentityvisitor import CqlIdentityVisitor
 from cql2string import cql2string
+from cqltokenizer import CQLTokenizerException
