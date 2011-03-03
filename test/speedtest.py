@@ -14,7 +14,8 @@ class SpeedTest(CQ2TestCase):
         doParse()
         t1 = time()
         #profile(doParse, runKCacheGrind = True)
-        self.assertTiming(0.053, t1-t0, 0.057) # used __slots__ in CqlAbstractNode
+        self.assertTiming(0.050, t1-t0, 0.054) # side effect of optimizing visitor
+        #self.assertTiming(0.053, t1-t0, 0.057) # used __slots__ in CqlAbstractNode
         #self.assertTiming(0.060, t1-t0, 0.064) # inlined TokenStack (way less code!)
         #self.assertTiming(0.074, t1-t0, 0.078) # let re do the tokenizing
         #self.assertTiming(0.101, t1-t0, 0.103) # rewrote everything to try/except
@@ -33,7 +34,7 @@ class SpeedTest(CQ2TestCase):
         doVisit()
         t1 = time()
         #profile(doVisit, runKCacheGrind = True)
-        self.assertTiming(0.039, t1-t0, 0.041) # optimized identityvisitor
+        self.assertTiming(0.036, t1-t0, 0.041) # optimized identityvisitor
         #self.assertTiming(0.050, t1-t0, 0.053) # made visitXYZ() optional
         #self.assertTiming(0.064, t1-t0, 0.068) # replaced children() attr access and replaced tuple by list
         #self.assertTiming(0.100, t1-t0, 0.110) # start
@@ -50,4 +51,4 @@ class SpeedTest(CQ2TestCase):
         doVisit()
         t1 = time()
         #profile(doVisit, runKCacheGrind = True)
-        self.assertTiming(0.021, t1-t0, 0.024) 
+        self.assertTiming(0.020, t1-t0, 0.024) 

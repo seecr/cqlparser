@@ -42,6 +42,8 @@ class CQLTokenizerException(Exception):
     pass
 
 def tokenize(text):
+    # removing next check avoids double parsing and improves SpeedTest.testParser() from
+    # 0.056 to 0.049.  But then the same type of checks must be done while parsing.
     if not completeline.match(text):
         raise CQLTokenizerException("Unrecognized token in '%s'" % text.replace("'", r"\'")) 
     return tokenSplitter.findall(text)

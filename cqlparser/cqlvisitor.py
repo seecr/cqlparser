@@ -42,7 +42,7 @@ class CqlVisitor(object):
         return node.visitChildren(self)
 
     def visitMODIFIERLIST(self, node):
-        return node.visitChildren(self)
+        return node.children[0].accept(self)
 
     def visitMODIFIER(self, node):
         return node.visitChildren(self)
