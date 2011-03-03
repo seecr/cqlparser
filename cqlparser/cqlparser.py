@@ -194,24 +194,23 @@ class CQLParser:
             bookmark = self._top
             boolGroup = self._booleanGroup()
             scopedClause = self._scopedClause()
-            #return SCOPED_CLAUSE(searchClause, boolGroup, scopedClause)
-            return self.__swapScopedClauses(searchClause, boolGroup, scopedClause)
+            return self.__insertSearchClause(searchClause, boolGroup, scopedClause)
         except (RollBack, IndexError, StopIteration):
             self._top = bookmark
             return SCOPED_CLAUSE(searchClause)
 
-    def __swapScopedClauses(self, searchClause, booleanGroup, scopedClause):
-        if booleanGroup.children[0] not in ['and', 'not']:
-            return SCOPED_CLAUSE(searchClause, booleanGroup, scopedClause)
-        if len(scopedClause.children) == 3:
-            childSearchClause = scopedClause.children[0]
-            childBoolean = scopedClause.children[1]
-            childScopedClause = scopedClause.children[2]
-            nr2 = SCOPED_CLAUSE(searchClause, booleanGroup, childSearchClause)
-            result = SCOPED_CLAUSE(nr2, childBoolean, childScopedClause)
-        else:
-            result = SCOPED_CLAUSE(searchClause, booleanGroup, scopedClause)
-        return result
+    def __insertSearchClause(self, searchClause, booleanGroup, scopedClause):    
+        parentNode = None
+        node = scopedClause
+        if booleanGroup.children[0] in ['and', 'not']:
+            while len(node.children) == 3:
+                parentNode = node
+                node = node.children[0]
+        newScopedClause = SCOPED_CLAUSE(searchClause, booleanGroup, node)
+        if parentNode:
+            parentNode.children = (newScopedClause,) + parentNode.children[1:]
+            newScopedClause = scopedClause
+        return newScopedClause
 
     def _boolean(self):
         """boolean ::= 'and' | 'or' | 'not' | 'prox'"""
