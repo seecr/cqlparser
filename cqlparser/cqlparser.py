@@ -194,6 +194,7 @@ class CQLParser:
             bookmark = self._top
             boolGroup = self._booleanGroup()
             scopedClause = self._scopedClause()
+            #return SCOPED_CLAUSE(searchClause, boolGroup, scopedClause)
             return self.__swapScopedClauses(searchClause, boolGroup, scopedClause)
         except (RollBack, IndexError, StopIteration):
             self._top = bookmark
@@ -203,11 +204,11 @@ class CQLParser:
         if booleanGroup.children[0] not in ['and', 'not']:
             return SCOPED_CLAUSE(searchClause, booleanGroup, scopedClause)
         if len(scopedClause.children) == 3:
-            childLeft = scopedClause.children[0]
+            childSearchClause = scopedClause.children[0]
             childBoolean = scopedClause.children[1]
-            childRight = scopedClause.children[2]
-            nr2 = SCOPED_CLAUSE(searchClause, booleanGroup, childLeft)
-            result = SCOPED_CLAUSE(nr2, childBoolean, childRight)
+            childScopedClause = scopedClause.children[2]
+            nr2 = SCOPED_CLAUSE(searchClause, booleanGroup, childSearchClause)
+            result = SCOPED_CLAUSE(nr2, childBoolean, childScopedClause)
         else:
             result = SCOPED_CLAUSE(searchClause, booleanGroup, scopedClause)
         return result

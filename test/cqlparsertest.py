@@ -130,6 +130,25 @@ class CQLParserTest(unittest.TestCase):
 )
         self.assertEquals(expected, parseString('term2 and term3 and term4 and term5 and term6 and term7 and term8'))
 
+    def testPrecedenceAndZoveel(self):
+        expected =  CQL_QUERY(
+            SCOPED_CLAUSE(
+                SCOPED_CLAUSE(
+                    SCOPED_CLAUSE(
+                        SEARCH_CLAUSE(SEARCH_TERM(TERM('a'))),
+                        BOOLEAN('and'),
+                        SEARCH_CLAUSE(SEARCH_TERM(TERM('b')))
+                    ),
+                    BOOLEAN('and'),
+                    SEARCH_CLAUSE(SEARCH_TERM(TERM('c')))
+                ),
+                BOOLEAN('and'),
+                SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('d'))))
+            )
+        )
+        r = parseString("a and b and c and d")
+        self.assertEquals(expected, r, r.prettyPrint())
+
     def testBooleansAreCaseInsensitive(self):
         self.assertEquals(
             CQL_QUERY(SCOPED_CLAUSE(
