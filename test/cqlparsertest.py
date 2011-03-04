@@ -3,7 +3,7 @@
 #
 #    CQLParser is a parser that builds a parsetree for the given CQL and
 #    can convert this into other formats.
-#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2005-2011 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of CQLParser
 #
@@ -30,6 +30,7 @@ from cqlparser.cqlparser import CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN
 import string
 from cqlparser import cql2string
 
+
 class CQLParserTest(unittest.TestCase):
     """http://www.loc.gov/standards/sru/sru1-1archive/cql.html"""
 
@@ -37,19 +38,23 @@ class CQLParserTest(unittest.TestCase):
         self.assertException(CQLParseException, '')
 
     def testOneTerm(self):
-        self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))))), parseString('term'))
-        self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('white space'))))), parseString('"white space"'))
-        self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('string "quotes"'))))), parseString(r'"string \"quotes\""'))
+        self.assertEqualsCQL(CQL_QUERY(SEARCH_CLAUSE(SEARCH_TERM(TERM('term')))), parseString('term'))
+        self.assertEqualsCQL(CQL_QUERY(SEARCH_CLAUSE(SEARCH_TERM(TERM('white space')))), parseString('"white space"'))
+        self.assertEqualsCQL(CQL_QUERY(SEARCH_CLAUSE(SEARCH_TERM(TERM('string "quotes"')))), parseString(r'"string \"quotes\""'))
         
     def testTermWithOrWithoutQuotes(self):
-        self.assertEquals(parseString('"cats"'), parseString('cats'))
+        self.assertEqualsCQL(parseString('"cats"'), parseString('cats'))
 
     def testTwoTerms(self):
-        self.assertEquals(
-            CQL_QUERY(SCOPED_CLAUSE(
-                SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))), BOOLEAN('and'),
-                    SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term2')))))),
-            parseString('term and term2'))
+        expected = CQL_QUERY(
+            SCOPED_CLAUSE(
+                SEARCH_CLAUSE(SEARCH_TERM(TERM('term1'))), 
+                BOOLEAN('and'),
+                SEARCH_CLAUSE(SEARCH_TERM(TERM('term2')))
+            )
+        )
+        r = parseString('term1 and term2')
+        self.assertEqualsCQL(expected, r)
 
     def testPrecedenceAndOr(self):
         answer = CQL_QUERY(
@@ -60,13 +65,11 @@ class CQLParserTest(unittest.TestCase):
                     SEARCH_CLAUSE(SEARCH_TERM(TERM('term2')))
                 ),
                 BOOLEAN('or'),
-                SCOPED_CLAUSE(
-                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term3')))
-                )
+                SEARCH_CLAUSE(SEARCH_TERM(TERM('term3')))
             )
         )
         result = parseString('term and term2 or term3')
-        self.assertEquals(answer, result, '%s != %s' % (answer.prettyPrint(), result.prettyPrint()))
+        self.assertEqualsCQL(answer, result)
 
     def testPrecedenceOrAnd(self):
         answer = CQL_QUERY(
@@ -76,11 +79,11 @@ class CQLParserTest(unittest.TestCase):
                 SCOPED_CLAUSE(
                     SEARCH_CLAUSE(SEARCH_TERM(TERM('term2'))),
                     BOOLEAN('and'),
-                    SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term3'))))
+                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term3')))
                 )
             )
         )
-        self.assertEquals(answer, parseString('term1 or term2 and term3'))
+        self.assertEqualsCQL(answer, parseString('term1 or term2 and term3'))
         
     def testPrecedenceAndOr2(self):
         answer = CQL_QUERY(
@@ -91,15 +94,14 @@ class CQLParserTest(unittest.TestCase):
                     SEARCH_CLAUSE(parseString('term2 and term3 and term4 and term5'))
                 ),
                 BOOLEAN('or'),
-                SCOPED_CLAUSE(
-                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term6')))
-                )
+                SEARCH_CLAUSE(SEARCH_TERM(TERM('term6')))
             )
         )
-        self.assertEquals(answer, parseString('term and (term2 and term3 and term4 and term5) or term6'))
+        r = parseString('term and (term2 and term3 and term4 and term5) or term6')
+        self.assertEqualsCQL(answer, r)
 
     def testPrecedenceAndAndAnd(self):
-        expected =  CQL_QUERY(
+        expected = CQL_QUERY(
             SCOPED_CLAUSE(
                 SCOPED_CLAUSE(
                     SCOPED_CLAUSE(
@@ -111,17 +113,17 @@ class CQLParserTest(unittest.TestCase):
                     SEARCH_CLAUSE(SEARCH_TERM(TERM('c')))
                 ),
                 BOOLEAN('and'),
-                SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('d'))))
+                SEARCH_CLAUSE(SEARCH_TERM(TERM('d')))
             )
         )
         r = parseString("a and b and c and d")
-        self.assertEquals(expected, r, r.prettyPrint())
+        self.assertEqualsCQL(expected, r)
 
     def testBooleansAreCaseInsensitive(self):
-        self.assertEquals(
+        self.assertEqualsCQL(
             CQL_QUERY(SCOPED_CLAUSE(
                 SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))), BOOLEAN('and'),
-                    SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term2')))))),
+                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term2'))))),
             parseString('term AnD term2'))
 
     def testPrefixesAreIllegal(self):
@@ -142,10 +144,10 @@ class CQLParserTest(unittest.TestCase):
         SE = SEARCH_CLAUSE
         ST = SEARCH_TERM
         T = TERM
-        self.assertEquals(Q(SC(SE(Q(SC(SE(ST(T('term')))))))), parseString('(term)'))
-        self.assertEquals(Q(SC(SE(Q(SC(SE(Q(SC(SE(ST(T('term'))))))))))), parseString('((term))'))
+        self.assertEqualsCQL(Q(SE(Q(SE(ST(T('term')))))), parseString('(term)'))
+        self.assertEqualsCQL(Q(SE(Q(SE(Q(SE(ST(T('term')))))))), parseString('((term))'))
 
-        self.assertEquals(Q(SC(SE(Q(SC(SE(ST(T('term'))), BOOLEAN('and'), SC(SE(ST(T('term2'))))))))), parseString('(term and term2)'))
+        self.assertEqualsCQL(Q(SE(Q(SC(SE(ST(T('term'))), BOOLEAN('and'), SE(ST(T('term2'))))))), parseString('(term and term2)'))
 
         self.assertException(CQLParseException, '(term')
         self.assertException(CQLParseException, '(term term2')
@@ -160,7 +162,7 @@ class CQLParserTest(unittest.TestCase):
         ST = SEARCH_TERM
         T = TERM
         R = RELATION
-        self.assertEquals(Q(SC(SE(INDEX(T('field1')), R(COMPARITOR('=')), ST(T('200'))))), parseString('field1 = 200'))
+        self.assertEqualsCQL(Q(SE(INDEX(T('field1')), R(COMPARITOR('=')), ST(T('200')))), parseString('field1 = 200'))
         for comparitor in ['>', '<', '>=', '<=', '<>']:
             self.assertException(UnsupportedCQL, 'field1 %s 200' % comparitor, supportedComparitors=['='])
 
@@ -170,7 +172,7 @@ class CQLParserTest(unittest.TestCase):
         SE = SEARCH_CLAUSE
         ST = SEARCH_TERM
         T = TERM
-        self.assertEquals(Q(SC(SE(INDEX(T('field0')), RELATION(COMPARITOR('='), MODIFIERLIST(MODIFIER(T("boost"), COMPARITOR("="), T("1.5")))), ST(T('value'))))), parseString("field0 =/boost=1.5 value"))
+        self.assertEqualsCQL(Q(SE(INDEX(T('field0')), RELATION(COMPARITOR('='), MODIFIERLIST(MODIFIER(T("boost"), COMPARITOR("="), T("1.5")))), ST(T('value')))), parseString("field0 =/boost=1.5 value"))
 
     def testIndexRelationExactSearchTerm(self):
         Q = CQL_QUERY
@@ -179,7 +181,7 @@ class CQLParserTest(unittest.TestCase):
         ST = SEARCH_TERM
         T = TERM
         R = RELATION
-        self.assertEquals(Q(SC(SE(INDEX(T('field1')), R(COMPARITOR('exact')), ST(T('200'))))), parseString('field1 exact 200'))
+        self.assertEqualsCQL(Q(SE(INDEX(T('field1')), R(COMPARITOR('exact')), ST(T('200')))), parseString('field1 exact 200'))
 
     def testInvalidModifiers(self):
         self.assertException(CQLParseException, 'field0 =/')
@@ -224,11 +226,9 @@ class CQLParserTest(unittest.TestCase):
     def testPrettyPrintSimple(self):
         q = parseString('aap')
         self.assertEquals("""CQL_QUERY(
-    SCOPED_CLAUSE(
-        SEARCH_CLAUSE(
-            SEARCH_TERM(
-                TERM('aap')
-            )
+    SEARCH_CLAUSE(
+        SEARCH_TERM(
+            TERM('aap')
         )
     )
 )""", q.prettyPrint())
@@ -243,28 +243,24 @@ class CQLParserTest(unittest.TestCase):
             )
         ),
         BOOLEAN('and'),
-        SCOPED_CLAUSE(
-            SEARCH_CLAUSE(
-                CQL_QUERY(
-                    SCOPED_CLAUSE(
-                        SEARCH_CLAUSE(
-                            INDEX(
-                                TERM('noot')
-                            ),
-                            RELATION(
-                                COMPARITOR('=')
-                            ),
-                            SEARCH_TERM(
-                                TERM('mies')
-                            )
+        SEARCH_CLAUSE(
+            CQL_QUERY(
+                SCOPED_CLAUSE(
+                    SEARCH_CLAUSE(
+                        INDEX(
+                            TERM('noot')
                         ),
-                        BOOLEAN('or'),
-                        SCOPED_CLAUSE(
-                            SEARCH_CLAUSE(
-                                SEARCH_TERM(
-                                    TERM('vuur')
-                                )
-                            )
+                        RELATION(
+                            COMPARITOR('=')
+                        ),
+                        SEARCH_TERM(
+                            TERM('mies')
+                        )
+                    ),
+                    BOOLEAN('or'),
+                    SEARCH_CLAUSE(
+                        SEARCH_TERM(
+                            TERM('vuur')
                         )
                     )
                 )
@@ -283,3 +279,7 @@ class CQLParserTest(unittest.TestCase):
             self.fail()
         except exceptionClass, e:
             pass
+
+    def assertEqualsCQL(self, expected, result):
+        self.assertEquals(expected, result, "%s !=\n %s" % (expected.prettyPrint(), result.prettyPrint()))
+

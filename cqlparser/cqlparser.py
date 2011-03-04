@@ -3,7 +3,7 @@
 #
 #    CQLParser is a parser that builds a parsetree for the given CQL and
 #    can convert this into other formats.
-#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
+#    Copyright (C) 2005-2011 Seek You Too (CQ2) http://www.cq2.nl
 #
 #    This file is part of CQLParser
 #
@@ -183,34 +183,24 @@ class CQLParser:
                 self._token('>'),
                 self._uri)
 
-    def _scopedClause(self):
+    def _scopedClause(self, insertNode=None, insertBoolGroup=None):
         """
         scopedClause ::= scopedClause booleanGroup searchClause | searchClause
         we use:
         scopedClause ::= searchClause booleanGroup scopedClause | searchClause
         """
-        searchClause = self._searchClause()
+        leftClause = self._searchClause()
+        if not insertNode is None:
+            leftClause = SCOPED_CLAUSE(insertNode, insertBoolGroup, leftClause)
+        bookmark = self._top
         try:
-            bookmark = self._top
             boolGroup = self._booleanGroup()
-            scopedClause = self._scopedClause()
-            return self.__insertSearchClause(searchClause, boolGroup, scopedClause)
+            if boolGroup.children[0] in ['and', 'not']:
+                return self._scopedClause(insertNode=leftClause, insertBoolGroup=boolGroup)
+            return SCOPED_CLAUSE(leftClause, boolGroup, self._scopedClause())
         except (RollBack, IndexError, StopIteration):
             self._top = bookmark
-            return SCOPED_CLAUSE(searchClause)
-
-    def __insertSearchClause(self, searchClause, booleanGroup, scopedClause):    
-        parentNode = None
-        node = scopedClause
-        if booleanGroup.children[0] in ['and', 'not']:
-            while len(node.children) == 3:
-                parentNode = node
-                node = node.children[0]
-        newScopedClause = SCOPED_CLAUSE(searchClause, booleanGroup, node)
-        if parentNode:
-            parentNode.children = (newScopedClause,) + parentNode.children[1:]
-            newScopedClause = scopedClause
-        return newScopedClause
+            return leftClause
 
     def _boolean(self):
         """boolean ::= 'and' | 'or' | 'not' | 'prox'"""
