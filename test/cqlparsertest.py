@@ -239,6 +239,10 @@ class CQLParserTest(unittest.TestCase):
         self.assertEquals(1, mockVisitor.visitCOMPARITOR_called)
         self.assertEquals(c, mockVisitor.visitCOMPARITOR_args[0])
 
+    def testName(self):
+        q = CQL_QUERY(None)
+        self.assertEquals("CQL_QUERY", q.name())
+
     def testVisitReturnValue(self):
         q = CQL_QUERY(None)
         class MockVisitor(object):

@@ -77,7 +77,9 @@ for aClass in ['SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDE
         __slots__ = []
         def accept(self, visitor):
             return visitor.visit%s(self)
-""" % (aClass, aClass))
+        def name(self):
+            return "%s"
+""" % (aClass, aClass, aClass))
 
 def findLastScopedClause(aNode):
     if len(aNode.children) == 1 and type(aNode) == SCOPED_CLAUSE:
