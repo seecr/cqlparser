@@ -37,8 +37,8 @@ class Cql2StringTest(TestCase):
         self.assertCql('term1 AND term2')
         self.assertCql('term1 AND term2 AND term3')
         self.assertCql('term1 AND term2 AND term3 AND term4')
-        self.assertCql('term1 AND term2 OR term3 AND term4')
-        self.assertCql('term1 NOT term2 OR term3 AND term4')
+        self.assertCql('(term1 AND term2) OR term3 AND term4')
+        self.assertCql('(term1 NOT term2) OR term3 AND term4')
 
     def testRelation(self):
         self.assertCql('field1=term1')

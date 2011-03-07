@@ -183,24 +183,29 @@ class CQLParser:
                 self._token('>'),
                 self._uri)
 
-    def _scopedClause(self, insertNode=None, insertBoolGroup=None):
+    def _scopedClause(self, insertBefore=None):
         """
         scopedClause ::= scopedClause booleanGroup searchClause | searchClause
         we use:
         scopedClause ::= searchClause booleanGroup scopedClause | searchClause
         """
-        leftClause = self._searchClause()
-        if not insertNode is None:
-            leftClause = SCOPED_CLAUSE(insertNode, insertBoolGroup, leftClause)
+        searchClause = self._searchClause()
         bookmark = self._top
+        if insertBefore:
+            scopedClause = SCOPED_CLAUSE(insertBefore[0], insertBefore[1], searchClause)
+        else:
+            scopedClause = SCOPED_CLAUSE(searchClause)
         try:
             boolGroup = self._booleanGroup()
-            if boolGroup.children[0] in ['and', 'not']:
-                return self._scopedClause(insertNode=leftClause, insertBoolGroup=boolGroup)
-            return SCOPED_CLAUSE(leftClause, boolGroup, self._scopedClause())
+            if boolGroup.children[0] == 'or':
+                if insertBefore:
+                    searchClause = SEARCH_CLAUSE(CQL_QUERY(scopedClause))
+                scopedClause = SCOPED_CLAUSE(searchClause, boolGroup, self._scopedClause())
+            else:
+                scopedClause = self._scopedClause((scopedClause, boolGroup))
         except (RollBack, IndexError, StopIteration):
             self._top = bookmark
-            return leftClause
+        return scopedClause
 
     def _boolean(self):
         """boolean ::= 'and' | 'or' | 'not' | 'prox'"""
