@@ -241,7 +241,7 @@ class CQLParserTest(unittest.TestCase):
 
     def testName(self):
         q = CQL_QUERY(None)
-        self.assertEquals("CQL_QUERY", q.name())
+        self.assertEquals("CQL_QUERY", q.name)
 
     def testVisitReturnValue(self):
         q = CQL_QUERY(None)

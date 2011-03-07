@@ -75,10 +75,9 @@ class CQLAbstractSyntaxNode(object):
 for aClass in ['SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDEX', 'RELATION', 'COMPARITOR', 'MODIFIERLIST', 'MODIFIER', 'TERM', 'IDENTIFIER', 'CQL_QUERY']:
     exec("""class %s(CQLAbstractSyntaxNode):
         __slots__ = []
+        name = "%s"
         def accept(self, visitor):
             return visitor.visit%s(self)
-        def name(self):
-            return "%s"
 """ % (aClass, aClass, aClass))
 
 def findLastScopedClause(aNode):
