@@ -1,0 +1,1281 @@
+Changeset created on Tue Mar  8 12:14:52 CET 2011 by Seek You Too
+
+Description: Speedimprovements in parsing cql query's
+
+    - replaced children() with children, name() with name
+    - used direct class refs instead of __class__
+    - one small optimization for visitor.visitMODIFIERLIST
+    - added test to resolve CQL left to right properly
+    - fixed bug in AND NOT query's
+
+Baseline version: svn+ssh://svn@svn.cq2.org/svn/cqlparser/tags/version_1.5.4
+
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_1.5.4//cqlparser/cql2string.py version_1.6/cqlparser/cql2string.py
+--- version_1.5.4//cqlparser/cql2string.py	2010-09-16 10:28:18.000000000 +0200
++++ version_1.6/cqlparser/cql2string.py	2011-03-08 12:13:58.000000000 +0100
+@@ -2,7 +2,7 @@
+ #
+ #    CQLParser is a parser that builds a parsetree for the given CQL and
+ #    can convert this into other formats.
+-#    Copyright (C) 2005-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #
+ #    This file is part of CQLParser
+ #
+@@ -29,15 +29,15 @@
+ 
+ class Cql2StringVisitor(CqlVisitor):
+     def visitSEARCH_CLAUSE(self, node):
+-        children = self.visitChildren(node)
++        children = node.visitChildren(self)
+         return ''.join(children)
+ 
+     def visitMODIFIER(self, node):
+-        children = self.visitChildren(node)
++        children = node.visitChildren(self)
+         return '/'+''.join(children)
+ 
+     def visitRELATION(self, node):
+-        children = self.visitChildren(node)
++        children = node.visitChildren(self)
+         result = ''.join(children)
+         if result == '=':
+             return result
+@@ -53,7 +53,7 @@
+         return term
+ 
+     def _joinChildren(self, node):
+-        children = self.visitChildren(node)
++        children = node.visitChildren(self)
+         return ' '.join(children)
+ 
+     visitSEARCH_TERM = _joinChildren
+@@ -62,4 +62,4 @@
+     visitMODIFIERLIST = _joinChildren
+     
+ def cql2string(ast):
+-    return Cql2StringVisitor(ast).visit()[1:-1]
+\ No newline at end of file
++    return Cql2StringVisitor(ast).visit()[1:-1]
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_1.5.4//cqlparser/cqlidentityvisitor.py version_1.6/cqlparser/cqlidentityvisitor.py
+--- version_1.5.4//cqlparser/cqlidentityvisitor.py	2010-09-16 10:28:18.000000000 +0200
++++ version_1.6/cqlparser/cqlidentityvisitor.py	2011-03-08 12:13:58.000000000 +0100
+@@ -23,26 +23,36 @@
+ ## end license ##
+ 
+ from cqlvisitor import CqlVisitor
++from cqlparser import CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, MODIFIERLIST, MODIFIER, TERM, IDENTIFIER
++
+ 
+ class CqlIdentityVisitor(CqlVisitor):
+-    def visitChildren(self, node):
+-        return node.__class__(*CqlVisitor.visitChildren(self, node))
+ 
+     def visitSEARCH_TERM(self, node):
+-        assert len(node.children()) == 1
+-        return self.visitChildren(node)
++        return SEARCH_TERM(node.children[0].accept(self))
++
++    def visitSEARCH_CLAUSE(self, node):
++        return SEARCH_CLAUSE(*node.visitChildren(self))
++
++    def visitSCOPED_CLAUSE(self, node):
++        return SCOPED_CLAUSE(*node.visitChildren(self))
++
++    def visitCQL_QUERY(self, node):
++        return CQL_QUERY(*node.visitChildren(self))
++
++    def visitRELATION(self, node):
++        return RELATION(*node.visitChildren(self))
++
++    def visitINDEX(self, node):
++        return INDEX(node.children[0].accept(self))
+ 
+     # terminals
+-    def _copy(self, node):
+-        return node.__class__(*node.children())
+-    
+     def visitCOMPARITOR(self, node):
+-        assert len(node.children()) == 1
+-        return self._copy(node)
++        return COMPARITOR(node.children[0])
+ 
+     def visitBOOLEAN(self, node):
+-        assert len(node.children()) == 1
+-        return self._copy(node)
++        return BOOLEAN(node.children[0])
+     
+     def visitTERM(self, node):
+-        return self._copy(node)
++        return TERM(node.children[0])
++
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_1.5.4//cqlparser/cqlparser.py version_1.6/cqlparser/cqlparser.py
+--- version_1.5.4//cqlparser/cqlparser.py	2010-09-16 10:28:18.000000000 +0200
++++ version_1.6/cqlparser/cqlparser.py	2011-03-08 12:13:58.000000000 +0100
+@@ -3,7 +3,7 @@
+ #
+ #    CQLParser is a parser that builds a parsetree for the given CQL and
+ #    can convert this into other formats.
+-#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2005-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #
+ #    This file is part of CQLParser
+ #
+@@ -23,6 +23,8 @@
+ #
+ ## end license ##
+ 
++from cqltokenizer import tokenize
++
+ DEFAULTCOMPARITORS = ['=', '>', '<', '>=', '<=', '<>', '==', 'any', 'all', 'adj', 'within', 'encloses', 'exact']
+ 
+ class UnsupportedCQL(Exception):
+@@ -32,58 +34,59 @@
+ class CQLParseException(Exception):
+     pass
+ 
++class RollBack(Exception):
++    pass
++
+ class CQLAbstractSyntaxNode(object):
++    __slots__ = ['children']
+ 
+     def __init__(self, *args):
+-        self._children = args
++        self.children = args
+ 
+     def __repr__(self):
+         return self.__str__()
+ 
+     def __str__(self):
+-        #return self.prettyPrint()
+-        return "%s(%s)" % (str(self.__class__).split('.')[-1][:-2], ", ".join(map(repr, self._children)))
++        return "%s(%s)" % (self.__class__.__name__, ", ".join(repr(c) for c in self.children))
+ 
+     def prettyPrint(self, offset=0):
+         spaces = offset * 4 * ' '
+-        if len(self._children) == 1 and type(self._children[0] ) == str:
+-            return spaces + str(self.__class__).split('.')[-1][:-2] + "(" + repr(self._children[0]) + ")"
+-        result = [spaces + str(self.__class__).split('.')[-1][:-2] + "("]
+-        result.append(',\n'.join(child.prettyPrint(offset+1) for child in self._children if type(child)!=str))
++        classname = self.__class__.__name__ 
++        if len(self.children) == 1 and type(self.children[0] ) == str:
++            return spaces + classname + "(" + repr(self.children[0]) + ")"
++        result = [spaces + classname + "("]
++        result.append(',\n'.join(child.prettyPrint(offset + 1) for child
++            in self.children if type(child) != str))
+         result.append(spaces + ")")
+         return '\n'.join(result)
+ 
+     def __eq__(self, other):
+-        return self.__class__ == other.__class__ and self._children == other._children
++        return self.__class__ == other.__class__ and self.children == other.children
+ 
+     def __ne__(self, other):
+         return not self.__eq__(other)
+ 
+     def __hash__(self):
+-        return hash(self.__class__) ^ hash(self._children)
+-
+-    def children(self):
+-        return self._children
++        return hash(self.__class__) ^ hash(self.children)
+ 
+-    def replaceChildren(self, *args):
+-        self._children = args
++    def visitChildren(self, visitor):
++        return [child.accept(visitor) for child in self.children]
+ 
+ for aClass in ['SCOPED_CLAUSE', 'BOOLEAN', 'SEARCH_CLAUSE', 'SEARCH_TERM', 'INDEX', 'RELATION', 'COMPARITOR', 'MODIFIERLIST', 'MODIFIER', 'TERM', 'IDENTIFIER', 'CQL_QUERY']:
+     exec("""class %s(CQLAbstractSyntaxNode):
+-    def accept(self, visitor):
+-        return visitor.visit%s(self)
+-    def name(self):
+-        return "%s"
++        __slots__ = []
++        name = "%s"
++        def accept(self, visitor):
++            return visitor.visit%s(self)
+ """ % (aClass, aClass, aClass))
+ 
+ def findLastScopedClause(aNode):
+-    if len(aNode._children) == 1 and type(aNode) == SCOPED_CLAUSE:
++    if len(aNode.children) == 1 and type(aNode) == SCOPED_CLAUSE:
+         return aNode
+-    return findLastScopedClause(aNode._children[-1])
++    return findLastScopedClause(aNode.children[-1])
+ 
+ def parseString(cqlString, **kwargs):
+-    from cqltokenizer import tokenStack
+-    parser = CQLParser(tokenStack(cqlString), **kwargs)
++    parser = CQLParser(tokenize(cqlString), **kwargs)
+     return parser.parse()
+ 
+ class Token:
+@@ -94,7 +97,8 @@
+ 
+     def __call__(self):
+         #TODO refactor
+-        nextToken = self._parser._tokens.safeNext()
++        nextToken = self._parser._tokens[self._parser._top]
++        self._parser._top += 1
+         if not nextToken:
+             return False
+ 
+@@ -109,9 +113,10 @@
+         return True
+ 
+ class CQLParser:
+-    def __init__(self, tokenstack, supportedModifierNames=WildCard(),
++    def __init__(self, tokens, supportedModifierNames=WildCard(),
+         supportedComparitors = DEFAULTCOMPARITORS):
+-        self._tokens = tokenstack
++        self._tokens = tokens
++        self._top = 0
+         for term in ['_prefix', '_uri', '_modifierValue']:
+             setattr(self, term, self._term)
+             #(hoewel hier eigenlijk nog een veralgemeniseerde wrap laag omheen zou kunnen)
+@@ -119,52 +124,46 @@
+         self._supportedModifierNames = supportedModifierNames
+ 
+     def parse(self):
+-        if not self._tokens.hasNext():
++        if not self._tokens:
+             raise CQLParseException('No tokens found, at least one token expected.')
+-        result = self._cqlQuery()
+-        if self._tokens.hasNext():
+-            raise CQLParseException('Unexpected token after parsing ([%s], %s).' % (self._tokens.next(), str(result)))
+-        return result
+-
+-    def _tryTerms(self, *termFunctions):
+-        result = []
+-        self._tokens.bookmark()
+-        for termFunction in termFunctions:
+-            term = termFunction()
+-            if not term:
+-                self._tokens.revertToBookmark()
+-                return False
+-            result.append(term)
+-        self._tokens.dropBookmark()
++        try:
++            result = self._cqlQuery()
++        except (RollBack, IndexError):
++            result = False
++        if not self._top >= len(self._tokens):
++            raise CQLParseException('Unexpected token after parsing ([%s], %s).' % (self._tokens[self._top], str(result)))
+         return result
+ 
+     def _construct(self, constructor, *termFunctions):
+-        result = self._tryTerms(*termFunctions)
+-        if not result:
+-            return False
+-        return constructor(*result)
++        bookmark = self._top
++        try:
++            return constructor(*[termFunction() for termFunction in termFunctions])
++        except (RollBack, IndexError):
++            self._top = bookmark
++            raise
+ 
+     def _term(self):
+-        token = self._tokens.safeNext()
+-        if token and (not token[:1] in ['(', ')', '>', '=', '<', '/']):
+-            if '"' == token[0] == token[-1]:
+-                token = token[1:-1].replace(r'\"', '"')
+-            return TERM(token)
+-        return False
++        token = self._tokens[self._top]
++        self._top += 1
++        if token[0] == '"':
++            token = token[1:-1].replace(r'\"', '"')
++        elif token[0] in '()=></':
++            raise RollBack
++        return TERM(token)
+ 
+     def _searchTerm(self):
+-        return self._construct(SEARCH_TERM, self._term)
++        return SEARCH_TERM(self._term())
+ 
+     def _index(self):
+         """index ::= term"""
+-        return self._construct(INDEX, self._term)
++        return INDEX(self._term())
+ 
+     def _token(self, aToken, caseSensitive = True):
+         return Token(self, aToken, caseSensitive)
+ 
+     def _cqlQuery(self):
+         """cqlQuery ::= prefixAssignment cqlQuery | scopedClause"""
+-        if self._tokens.safePeek() == ">":
++        if self._top < len(self._tokens) and self._tokens[self._top] == ">":
+             return \
+                 self._construct(CQL_QUERY,
+                     self._prefixAssignment,
+@@ -185,47 +184,39 @@
+                 self._token('>'),
+                 self._uri)
+ 
+-    def _scopedClause(self):
++    def _scopedClause(self, insertBefore=None):
+         """
+         scopedClause ::= scopedClause booleanGroup searchClause | searchClause
+         we use:
+         scopedClause ::= searchClause booleanGroup scopedClause | searchClause
+         """
+-        #searchClause = self.searchClause()
+-
+-        head = self._tryTerms(self._searchClause)
+-        if not head:
+-            return False
+-        tail = self._tryTerms(
+-                self._booleanGroup,
+-                self._scopedClause)
+-        if tail:
+-            return self.__swapScopedClauses(*(head + tail))
+-        return SCOPED_CLAUSE(*head)
+-
+-    def __swapScopedClauses(self, searchClause, booleanGroup, scopedClause):
+-        if booleanGroup.children()[0] not in ['and', 'not']:
+-            return SCOPED_CLAUSE(searchClause, booleanGroup, scopedClause)
+-        if len(scopedClause.children()) == 3:
+-            childLeft = scopedClause.children()[0]
+-            childBoolean = scopedClause.children()[1]
+-            childRight = scopedClause.children()[2]
+-            nr2 = SCOPED_CLAUSE(searchClause, booleanGroup, childLeft)
+-            result = SCOPED_CLAUSE(nr2, childBoolean, childRight)
++        searchClause = self._searchClause()
++        bookmark = self._top
++        if insertBefore:
++            scopedClause = SCOPED_CLAUSE(insertBefore[0], insertBefore[1], searchClause)
+         else:
+-            result = SCOPED_CLAUSE(searchClause, booleanGroup, scopedClause)
+-        return result
++            scopedClause = SCOPED_CLAUSE(searchClause)
++        try:
++            boolGroup = self._booleanGroup()
++            if boolGroup.children[0] == 'or':
++                if insertBefore:
++                    searchClause = SEARCH_CLAUSE(CQL_QUERY(scopedClause))
++                scopedClause = SCOPED_CLAUSE(searchClause, boolGroup, self._scopedClause())
++            else:
++                scopedClause = self._scopedClause((scopedClause, boolGroup))
++        except (RollBack, IndexError, StopIteration):
++            self._top = bookmark
++        return scopedClause
+ 
+     def _boolean(self):
+         """boolean ::= 'and' | 'or' | 'not' | 'prox'"""
+-        if not self._tokens.hasNext():
+-            return False
+-        token = self._tokens.peek().lower()
++        token = self._tokens[self._top]
++        if token.lower() in ['and', 'or', 'not']:
++            self._top += 1
++            return BOOLEAN(token.lower())
+         if token == 'prox':
+             raise UnsupportedCQL("booleanGroup: 'prox'")
+-        if token in ['and', 'or', 'not']:
+-            return BOOLEAN(self._tokens.next().lower())
+-        return False
++        raise RollBack
+ 
+     def _booleanGroup(self):
+         """
+@@ -233,16 +224,13 @@
+         we use:
+         booleanGroup ::= boolean modifierList | boolean
+         """
+-        #head = self.
+-        if not self._tokens.hasNext():
+-            return False
+-        head = self._tryTerms(self._boolean)
+-        if not head:
+-            return False
+-        tail = self._tryTerms(self._modifierList)
+-        if tail:
++        head = self._boolean()
++        try:
++            self._modifierList()
+             raise UnsupportedCQL("modifierLists on booleanGroups not supported")
+-        return head[0]
++        except (RollBack, IndexError):
++            pass
++        return head
+ 
+     def _searchClause(self):
+         """
+@@ -251,18 +239,18 @@
+             index relation searchTerm |
+             searchTerm
+         """
+-        if not self._tokens.hasNext():
+-            return False
+-        if self._tokens.peek() == "(":
+-            self._tokens.next()
+-            result = self._construct(SEARCH_CLAUSE, self._cqlQuery)
+-            if not self._tokens.safeNext() == ')':
+-                return False
++        if self._tokens[self._top] == "(":
++            self._top += 1
++            result = SEARCH_CLAUSE(self._cqlQuery())
++            token = self._tokens[self._top] if self._top < len(self._tokens) else None
++            self._top += 1
++            if token != ')':
++                raise RollBack
+             return result
+-        result = self._construct(SEARCH_CLAUSE, self._index, self._relation, self._searchTerm)
+-        if not result:
+-            result = self._construct(SEARCH_CLAUSE, self._searchTerm)
+-        return result
++        try:
++            return self._construct(SEARCH_CLAUSE, self._index, self._relation, self._searchTerm)
++        except (RollBack, IndexError):
++            return SEARCH_CLAUSE(self._searchTerm())
+ 
+     def _relation(self):
+         """
+@@ -271,22 +259,16 @@
+         relation ::= comparitor modifierList | comparitor
+         """
+         comparitor = self._comparitor()
+-        if not comparitor:
+-            return False
+-        if self._tokens.safePeek() == '/':
+-            modifierList = self._modifierList()
+-            return RELATION(comparitor, modifierList)
+-
++        if self._tokens[self._top] == '/':
++            return RELATION(comparitor, self._modifierList())
+         return RELATION(comparitor)
+ 
+     def _modifierName(self):
+-        if not self._tokens.hasNext():
+-            return False
+-
+-        modifierName = self._tokens.next()
+-        if modifierName not in self._supportedModifierNames:
+-            raise UnsupportedCQL("Unsupported ModifierName: %s" % modifierName)
+-        return TERM(modifierName)
++        modifierName = self._tokens[self._top]
++        self._top += 1
++        if modifierName in self._supportedModifierNames:
++            return TERM(modifierName)
++        raise UnsupportedCQL("Unsupported ModifierName: %s" % modifierName)
+ 
+     def _comparitor(self):
+         """
+@@ -294,26 +276,26 @@
+         comparitorSymbol ::= '=' | '>' | '<' | '>=' | '<=' | '<>'
+         we use a shortcut since most of this is not supported
+         """
+-        if not self._tokens.hasNext():
+-            return False
+-        token = self._tokens.peek().lower()
++        token = self._tokens[self._top]
++        self._top += 1
++        if token in self._supportedComparitors:
++            return COMPARITOR(token)
+         if not token in DEFAULTCOMPARITORS:
+-            return False
+-        if token not in self._supportedComparitors:
++            raise RollBack
++        else:
+             raise UnsupportedCQL('Unsupported comparitor: %s' % token)
+-        return COMPARITOR(self._tokens.next())
+ 
+     def _modifierList(self):
+         """
+         modifierList ::=  modifierList modifier | modifier
+         """
+-        return self._construct(MODIFIERLIST, self._modifier)
++        return MODIFIERLIST(self._modifier())
+ 
+     def _modifier(self):
+         """
+         modifier ::= '/' modifierName [comparitorSymbol modifierValue]
+         """
+-        slashToken = self._tokens.safeNext()
+-        if not slashToken == '/':
+-            return False
++        if self._tokens[self._top] != '/': 
++            raise RollBack
++        self._top += 1
+         return self._construct(MODIFIER, self._modifierName, self._comparitor, self._modifierValue)
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_1.5.4//cqlparser/cqltokenizer.py version_1.6/cqlparser/cqltokenizer.py
+--- version_1.5.4//cqlparser/cqltokenizer.py	2010-09-16 10:28:18.000000000 +0200
++++ version_1.6/cqlparser/cqltokenizer.py	2011-03-08 12:13:58.000000000 +0100
+@@ -2,7 +2,7 @@
+ #
+ #    CQLParser is a parser that builds a parsetree for the given CQL and
+ #    can convert this into other formats.
+-#    Copyright (C) 2005-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #
+ #    This file is part of CQLParser
+ #
+@@ -30,92 +30,21 @@
+ # charString1 is every token except a " ( ) > = < / and spaces
+ charString1 = r'[^"()>=<\s/]+'
+ # charString2 is every token surrounded by quotes "", except \"
+-charString2 = r'(?s)(?P<quot>\").*?((?<!\\)(?P=quot))'
++charString2 = r'(?s)\".*?(?:(?<!\\)\")'
+ # tokens are charString1, charString2 or ( ) >= <> <= > < = /
+ tokens = [ r'\(', r'\)', '>=', '<>', '<=', '>', '<', r'\=', r'\/', charString2, charString1 ]
+ 
+ tokenSplitter = re.compile(r'\s*(%s)' % ('|'.join(tokens)))
++completeline = re.compile(r'^(\s*(%s))*\s*$' % ('|'.join(tokens)))
+ TOKEN_GROUPNR = 1 # the one and only group.
+ 
+-def tokenStack(cqlQuery):
+-    return TokenStack(CQLTokenizer(cqlQuery))
+-
+ class CQLTokenizerException(Exception):
+     pass
+ 
+-class CQLTokenizer:
++def tokenize(text):
++    # removing next check avoids double parsing and improves SpeedTest.testParser() from
++    # 0.056 to 0.049.  But then the same type of checks must be done while parsing.
++    if not completeline.match(text):
++        raise CQLTokenizerException("Unrecognized token in '%s'" % text.replace("'", r"\'")) 
++    return tokenSplitter.findall(text)
+ 
+-    def __init__(self, text):
+-        self._text = text.strip()
+-        self._pointer = 0
+-
+-    def __iter__(self):
+-        return self
+-
+-    def next(self):
+-        match = tokenSplitter.match(self._text[self._pointer:])
+-        if match == None:
+-            if self._pointer != len(self._text):
+-                raise CQLTokenizerException("Unrecognized token at EOF: " + self._text[self._pointer:])
+-            raise StopIteration
+-        self._pointer += match.end(TOKEN_GROUPNR)
+-        return match.group(TOKEN_GROUPNR)
+-
+-class TokenStack:
+-    def __init__(self, tokenizer):
+-        self._tokens = list(tokenizer)
+-        self._pointer = 0
+-        self._bookmarks = Stack()
+-
+-    def prev(self):
+-        if self._pointer <= 0:
+-            raise ProgrammingError
+-        self._pointer += -1
+-        return self._tokens[self._pointer]
+-
+-    def peek(self):
+-        if not self.hasNext():
+-            raise StopIteration
+-        return self._tokens[self._pointer]
+-
+-    def safePeek(self):
+-        if not self.hasNext():
+-            return None
+-        return self._tokens[self._pointer]
+-
+-    def next(self):
+-        result = self.peek()
+-        self._pointer += 1
+-        return result
+-
+-    def safeNext(self):
+-        if not self.hasNext():
+-            return None
+-        return self.next()
+-
+-    def hasNext(self):
+-        return self._pointer < len(self._tokens)
+-
+-    def bookmark(self):
+-        self._bookmarks.push(self._pointer)
+-
+-    def revertToBookmark(self):
+-        self._pointer = self._bookmarks.pop()
+-
+-    def dropBookmark(self):
+-        self._bookmarks.pop()
+-
+-    def __str__(self):
+-        return "TokenStack: " + str(self._tokens)
+-
+-class Stack:
+-    def __init__(self):
+-        self._stack = []
+-
+-    def push(self, elem):
+-        self._stack.append(elem)
+-
+-    def pop(self):
+-        result = self._stack[-1]
+-        self._stack = self._stack[:-1]
+-        return result
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_1.5.4//cqlparser/cqlvisitor.py version_1.6/cqlparser/cqlvisitor.py
+--- version_1.5.4//cqlparser/cqlvisitor.py	2010-09-16 10:28:18.000000000 +0200
++++ version_1.6/cqlparser/cqlvisitor.py	2011-03-08 12:13:58.000000000 +0100
+@@ -2,7 +2,7 @@
+ #
+ #    CQLParser is a parser that builds a parsetree for the given CQL and
+ #    can convert this into other formats.
+-#    Copyright (C) 2005-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2005-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #
+ #    This file is part of CQLParser
+ #
+@@ -29,48 +29,36 @@
+     def visit(self):
+         return self._root.accept(self)
+ 
+-    def visitChildren(self, node):
+-        return tuple(child.accept(self) for child in node.children())
+-
+     def visitCQL_QUERY(self, node):
+-        assert len(node.children()) == 1
+-        return self.visitChildren(node)
++        return node.visitChildren(self)
+ 
+     def visitSCOPED_CLAUSE(self, node):
+-        return self.visitChildren(node)
++        return node.visitChildren(self)
+ 
+     def visitSEARCH_CLAUSE(self, node):
+-        return self.visitChildren(node)
+-
+-    def visitINDEX(self, node):
+-        assert len(node.children()) == 1
+-        return self.visitChildren(node)
++        return node.visitChildren(self)
+ 
+     def visitRELATION(self, node):
+-        return self.visitChildren(node)
++        return node.visitChildren(self)
+ 
+     def visitMODIFIERLIST(self, node):
+-        return self.visitChildren(node)
++        return node.children[0].accept(self)
+ 
+     def visitMODIFIER(self, node):
+-        assert len(node.children()) == 3
+-        return self.visitChildren(node)
++        return node.visitChildren(self)
+ 
+     # TERMINALS
++    def visitINDEX(self, node):
++        return node.children[0].accept(self)
++
+     def visitCOMPARITOR(self, node):
+-        assert len(node.children()) == 1
+-        return node.children()[0]
++        return node.children[0]
+ 
+     def visitBOOLEAN(self, node):
+-        assert len(node.children()) == 1
+-        return node.children()[0].upper()
++        return node.children[0].upper()
+ 
+     def visitSEARCH_TERM(self, node):
+-        assert len(node.children()) == 1
+-        term = node.children()[0].accept(self)
+-        #if term[0] == '"':
+-            #return term[1: -1] #.replace(r'\"', '"')
+-        return term
++        return node.children[0].accept(self)
+ 
+     def visitTERM(self, node):
+-        return node.children()[0]
++        return node.children[0]
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_1.5.4//cqlparser/performance.py version_1.6/cqlparser/performance.py
+--- version_1.5.4//cqlparser/performance.py	2010-09-16 10:28:18.000000000 +0200
++++ version_1.6/cqlparser/performance.py	2011-03-08 12:13:58.000000000 +0100
+@@ -2,7 +2,7 @@
+ #
+ #    CQLParser is a parser that builds a parsetree for the given CQL and
+ #    can convert this into other formats.
+-#    Copyright (C) 2005-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #
+ #    This file is part of CQLParser
+ #
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_1.5.4//setup.py version_1.6/setup.py
+--- version_1.5.4//setup.py	2010-09-16 10:28:18.000000000 +0200
++++ version_1.6/setup.py	2011-03-08 12:13:58.000000000 +0100
+@@ -2,7 +2,7 @@
+ #
+ #    CQLParser is a parser that builds a parsetree for the given CQL and
+ #    can convert this into other formats.
+-#    Copyright (C) 2005-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #
+ #    This file is part of CQLParser
+ #
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_1.5.4//test/alltests.py version_1.6/test/alltests.py
+--- version_1.5.4//test/alltests.py	2010-09-16 10:28:18.000000000 +0200
++++ version_1.6/test/alltests.py	2011-03-08 12:13:58.000000000 +0100
+@@ -3,7 +3,7 @@
+ #
+ #    CQLParser is a parser that builds a parsetree for the given CQL and
+ #    can convert this into other formats.
+-#    Copyright (C) 2005-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #
+ #    This file is part of CQLParser
+ #
+@@ -38,6 +38,7 @@
+ from cqltokenizertest import CQLTokenizerTest
+ from cqlidentityvisitortest import CqlIdentityVisitorTest
+ from cql2stringtest import Cql2StringTest
++from speedtest import SpeedTest
+ 
+ if __name__ == '__main__':
+     unittest.main()
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_1.5.4//test/cql2stringtest.py version_1.6/test/cql2stringtest.py
+--- version_1.5.4//test/cql2stringtest.py	2010-09-16 10:28:18.000000000 +0200
++++ version_1.6/test/cql2stringtest.py	2011-03-08 12:13:58.000000000 +0100
+@@ -3,7 +3,7 @@
+ #
+ #    CQLParser is a parser that builds a parsetree for the given CQL and
+ #    can convert this into other formats.
+-#    Copyright (C) 2005-2009 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
+ #
+ #    This file is part of CQLParser
+ #
+@@ -37,8 +37,8 @@
+         self.assertCql('term1 AND term2')
+         self.assertCql('term1 AND term2 AND term3')
+         self.assertCql('term1 AND term2 AND term3 AND term4')
+-        self.assertCql('term1 AND term2 OR term3 AND term4')
+-        self.assertCql('term1 NOT term2 OR term3 AND term4')
++        self.assertCql('(term1 AND term2) OR term3 AND term4')
++        self.assertCql('(term1 NOT term2) OR term3 AND term4')
+ 
+     def testRelation(self):
+         self.assertCql('field1=term1')
+@@ -58,4 +58,4 @@
+             input = expected
+         self.assertEquals(expected, cql2string(parseString(input)))
+         self.assertTrue(parseString(expected))
+-        
+\ No newline at end of file
++        
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_1.5.4//test/cqlidentityvisitortest.py version_1.6/test/cqlidentityvisitortest.py
+--- version_1.5.4//test/cqlidentityvisitortest.py	2010-09-16 10:28:18.000000000 +0200
++++ version_1.6/test/cqlidentityvisitortest.py	2011-03-08 12:13:58.000000000 +0100
+@@ -33,7 +33,7 @@
+     while index < len(result):
+         new_index = len(result)
+         for node in result[index:]:
+-            result.extend([n for n in node.children() if hasattr(n, 'children')])
++            result.extend([n for n in node.children if hasattr(n, 'children')])
+         index = new_index
+     return result
+ 
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_1.5.4//test/cqlparsertest.py version_1.6/test/cqlparsertest.py
+--- version_1.5.4//test/cqlparsertest.py	2010-09-16 10:28:18.000000000 +0200
++++ version_1.6/test/cqlparsertest.py	2011-03-08 12:13:58.000000000 +0100
+@@ -3,7 +3,7 @@
+ #
+ #    CQLParser is a parser that builds a parsetree for the given CQL and
+ #    can convert this into other formats.
+-#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
++#    Copyright (C) 2005-2011 Seek You Too (CQ2) http://www.cq2.nl
+ #
+ #    This file is part of CQLParser
+ #
+@@ -24,10 +24,12 @@
+ ## end license ##
+ 
+ import unittest
+-from cqlparser.cqlparser import CQLParser, parseString, UnsupportedCQL, CQLParseException
++from cqlparser.cqlparser import CQLParser
++from cqlparser import parseString, UnsupportedCQL, CQLParseException, CQLTokenizerException
+ from cqlparser.cqlparser import CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, MODIFIERLIST, MODIFIER, TERM, IDENTIFIER
+ import string
+-from cqlparser import cql2string, CQLTokenizerException
++from cqlparser import cql2string
++
+ 
+ class CQLParserTest(unittest.TestCase):
+     """http://www.loc.gov/standards/sru/sru1-1archive/cql.html"""
+@@ -36,27 +38,39 @@
+         self.assertException(CQLParseException, '')
+ 
+     def testOneTerm(self):
+-        self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))))), parseString('term'))
+-        self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('white space'))))), parseString('"white space"'))
+-        self.assertEquals(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('string "quotes"'))))), parseString(r'"string \"quotes\""'))
+-        
++        self.assertEqualsCQL(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))))), parseString('term'))
++        self.assertEqualsCQL(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('white space'))))), parseString('"white space"'))
++        self.assertEqualsCQL(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('string "quotes"'))))), parseString(r'"string \"quotes\""'))
++    
+     def testTermWithOrWithoutQuotes(self):
+-        self.assertEquals(parseString('"cats"'), parseString('cats'))
++        self.assertEqualsCQL(parseString('"cats"'), parseString('cats'))
+ 
+     def testTwoTerms(self):
+-        self.assertEquals(
+-            CQL_QUERY(SCOPED_CLAUSE(
+-                SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))), BOOLEAN('and'),
+-                    SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term2')))))),
+-            parseString('term and term2'))
++        expected = CQL_QUERY(
++            SCOPED_CLAUSE(
++                SCOPED_CLAUSE(
++                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term1'))),
++                ),
++                BOOLEAN('and'),
++                SEARCH_CLAUSE(SEARCH_TERM(TERM('term2')))
++            )
++        )
++        r = parseString('term1 and term2')
++        self.assertEqualsCQL(expected, r)
+ 
+     def testPrecedenceAndOr(self):
+         answer = CQL_QUERY(
+             SCOPED_CLAUSE(
+-                SCOPED_CLAUSE(
+-                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))),
+-                    BOOLEAN('and'),
+-                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term2')))
++                SEARCH_CLAUSE(
++                    CQL_QUERY(
++                        SCOPED_CLAUSE(
++                            SCOPED_CLAUSE(
++                                SEARCH_CLAUSE(SEARCH_TERM(TERM('term')))
++                            ),
++                            BOOLEAN('and'),
++                            SEARCH_CLAUSE(SEARCH_TERM(TERM('term2')))
++                        )
++                    )
+                 ),
+                 BOOLEAN('or'),
+                 SCOPED_CLAUSE(
+@@ -65,7 +79,7 @@
+             )
+         )
+         result = parseString('term and term2 or term3')
+-        self.assertEquals(answer, result, '%s != %s' % (answer.prettyPrint(), result.prettyPrint()))
++        self.assertEqualsCQL(answer, result)
+ 
+     def testPrecedenceOrAnd(self):
+         answer = CQL_QUERY(
+@@ -73,21 +87,29 @@
+                 SEARCH_CLAUSE(SEARCH_TERM(TERM('term1'))),
+                 BOOLEAN('or'),
+                 SCOPED_CLAUSE(
+-                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term2'))),
++                    SCOPED_CLAUSE(
++                        SEARCH_CLAUSE(SEARCH_TERM(TERM('term2')))
++                    ),
+                     BOOLEAN('and'),
+-                    SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term3'))))
++                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term3')))
+                 )
+             )
+         )
+-        self.assertEquals(answer, parseString('term1 or term2 and term3'))
++        self.assertEqualsCQL(answer, parseString('term1 or term2 and term3'))
+         
+     def testPrecedenceAndOr2(self):
+         answer = CQL_QUERY(
+             SCOPED_CLAUSE(
+-                SCOPED_CLAUSE(
+-                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))),
+-                    BOOLEAN('and'),
+-                    SEARCH_CLAUSE(parseString('term2 and term3 and term4 and term5'))
++                SEARCH_CLAUSE(
++                    CQL_QUERY(
++                        SCOPED_CLAUSE(
++                            SCOPED_CLAUSE(
++                                SEARCH_CLAUSE(SEARCH_TERM(TERM('term')))
++                            ),
++                            BOOLEAN('and'),
++                            SEARCH_CLAUSE(parseString('term2 and term3 and term4 and term5'))
++                        )
++                    )
+                 ),
+                 BOOLEAN('or'),
+                 SCOPED_CLAUSE(
+@@ -95,45 +117,38 @@
+                 )
+             )
+         )
+-        self.assertEquals(answer, parseString('term and (term2 and term3 and term4 and term5) or term6'))
++        r = parseString('term and (term2 and term3 and term4 and term5) or term6')
++        self.assertEqualsCQL(answer, r)
+ 
+     def testPrecedenceAndAndAnd(self):
+         expected = CQL_QUERY(
+-    SCOPED_CLAUSE(
+-        SCOPED_CLAUSE(
+-            SEARCH_CLAUSE(SEARCH_TERM(TERM('term2'))),
+-            BOOLEAN('and'),
+             SCOPED_CLAUSE(
+-                SEARCH_CLAUSE(SEARCH_TERM(TERM('term3'))),
+-                BOOLEAN('and'),
+                 SCOPED_CLAUSE(
+-                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term4'))),
+-                    BOOLEAN('and'),
+                     SCOPED_CLAUSE(
+-                        SEARCH_CLAUSE(SEARCH_TERM(TERM('term5'))),
+-                        BOOLEAN('and'),
+                         SCOPED_CLAUSE(
+-                            SEARCH_CLAUSE(SEARCH_TERM(TERM('term6'))),
+-                            BOOLEAN('and'),
+-                            SEARCH_CLAUSE(SEARCH_TERM(TERM('term7')))
+-                        )
+-                    )
+-                )
++                            SEARCH_CLAUSE(SEARCH_TERM(TERM('a'))),
++                        ),
++                        BOOLEAN('and'),
++                        SEARCH_CLAUSE(SEARCH_TERM(TERM('b')))
++                    ),
++                    BOOLEAN('and'),
++                    SEARCH_CLAUSE(SEARCH_TERM(TERM('c')))
++                ),
++                BOOLEAN('and'),
++                SEARCH_CLAUSE(SEARCH_TERM(TERM('d')))
+             )
+-        ),
+-        BOOLEAN('and'),
+-        SCOPED_CLAUSE(
+-            SEARCH_CLAUSE(SEARCH_TERM(TERM('term8')))
+         )
+-    )
+-)
+-        self.assertEquals(expected, parseString('term2 and term3 and term4 and term5 and term6 and term7 and term8'))
++        r = parseString("a and b and c and d")
++        self.assertEqualsCQL(expected, r)
+ 
+     def testBooleansAreCaseInsensitive(self):
+-        self.assertEquals(
++        self.assertEqualsCQL(
+             CQL_QUERY(SCOPED_CLAUSE(
+-                SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))), BOOLEAN('and'),
+-                    SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term2')))))),
++                SCOPED_CLAUSE(
++                    SEARCH_CLAUSE(SEARCH_TERM(TERM('term')))
++                ),
++                BOOLEAN('and'),
++                SEARCH_CLAUSE(SEARCH_TERM(TERM('term2'))))),
+             parseString('term AnD term2'))
+ 
+     def testPrefixesAreIllegal(self):
+@@ -154,10 +169,10 @@
+         SE = SEARCH_CLAUSE
+         ST = SEARCH_TERM
+         T = TERM
+-        self.assertEquals(Q(SC(SE(Q(SC(SE(ST(T('term')))))))), parseString('(term)'))
+-        self.assertEquals(Q(SC(SE(Q(SC(SE(Q(SC(SE(ST(T('term'))))))))))), parseString('((term))'))
++        self.assertEqualsCQL(Q(SC(SE(Q(SC(SE(ST(T('term')))))))), parseString('(term)'))
++        self.assertEqualsCQL(Q(SC(SE(Q(SC(SE(Q(SC(SE(ST(T('term'))))))))))), parseString('((term))'))
+ 
+-        self.assertEquals(Q(SC(SE(Q(SC(SE(ST(T('term'))), BOOLEAN('and'), SC(SE(ST(T('term2'))))))))), parseString('(term and term2)'))
++        self.assertEqualsCQL(Q(SC(SE(Q(SC(SC(SE(ST(T('term')))), BOOLEAN('and'), SE(ST(T('term2')))))))), parseString('(term and term2)'))
+ 
+         self.assertException(CQLParseException, '(term')
+         self.assertException(CQLParseException, '(term term2')
+@@ -172,7 +187,7 @@
+         ST = SEARCH_TERM
+         T = TERM
+         R = RELATION
+-        self.assertEquals(Q(SC(SE(INDEX(T('field1')), R(COMPARITOR('=')), ST(T('200'))))), parseString('field1 = 200'))
++        self.assertEqualsCQL(Q(SC(SE(INDEX(T('field1')), R(COMPARITOR('=')), ST(T('200'))))), parseString('field1 = 200'))
+         for comparitor in ['>', '<', '>=', '<=', '<>']:
+             self.assertException(UnsupportedCQL, 'field1 %s 200' % comparitor, supportedComparitors=['='])
+ 
+@@ -182,7 +197,7 @@
+         SE = SEARCH_CLAUSE
+         ST = SEARCH_TERM
+         T = TERM
+-        self.assertEquals(Q(SC(SE(INDEX(T('field0')), RELATION(COMPARITOR('='), MODIFIERLIST(MODIFIER(T("boost"), COMPARITOR("="), T("1.5")))), ST(T('value'))))), parseString("field0 =/boost=1.5 value"))
++        self.assertEqualsCQL(Q(SC(SE(INDEX(T('field0')), RELATION(COMPARITOR('='), MODIFIERLIST(MODIFIER(T("boost"), COMPARITOR("="), T("1.5")))), ST(T('value'))))), parseString("field0 =/boost=1.5 value"))
+ 
+     def testIndexRelationExactSearchTerm(self):
+         Q = CQL_QUERY
+@@ -191,7 +206,7 @@
+         ST = SEARCH_TERM
+         T = TERM
+         R = RELATION
+-        self.assertEquals(Q(SC(SE(INDEX(T('field1')), R(COMPARITOR('exact')), ST(T('200'))))), parseString('field1 exact 200'))
++        self.assertEqualsCQL(Q(SC(SE(INDEX(T('field1')), R(COMPARITOR('exact')), ST(T('200'))))), parseString('field1 exact 200'))
+ 
+     def testInvalidModifiers(self):
+         self.assertException(CQLParseException, 'field0 =/')
+@@ -224,6 +239,10 @@
+         self.assertEquals(1, mockVisitor.visitCOMPARITOR_called)
+         self.assertEquals(c, mockVisitor.visitCOMPARITOR_args[0])
+ 
++    def testName(self):
++        q = CQL_QUERY(None)
++        self.assertEquals("CQL_QUERY", q.name)
++
+     def testVisitReturnValue(self):
+         q = CQL_QUERY(None)
+         class MockVisitor(object):
+@@ -249,33 +268,33 @@
+         q = parseString('aap AND (noot = mies OR vuur)')
+         self.assertEquals("""CQL_QUERY(
+     SCOPED_CLAUSE(
+-        SEARCH_CLAUSE(
+-            SEARCH_TERM(
+-                TERM('aap')
++        SCOPED_CLAUSE(
++            SEARCH_CLAUSE(
++                SEARCH_TERM(
++                    TERM('aap')
++                )
+             )
+         ),
+         BOOLEAN('and'),
+-        SCOPED_CLAUSE(
+-            SEARCH_CLAUSE(
+-                CQL_QUERY(
++        SEARCH_CLAUSE(
++            CQL_QUERY(
++                SCOPED_CLAUSE(
++                    SEARCH_CLAUSE(
++                        INDEX(
++                            TERM('noot')
++                        ),
++                        RELATION(
++                            COMPARITOR('=')
++                        ),
++                        SEARCH_TERM(
++                            TERM('mies')
++                        )
++                    ),
++                    BOOLEAN('or'),
+                     SCOPED_CLAUSE(
+                         SEARCH_CLAUSE(
+-                            INDEX(
+-                                TERM('noot')
+-                            ),
+-                            RELATION(
+-                                COMPARITOR('=')
+-                            ),
+                             SEARCH_TERM(
+-                                TERM('mies')
+-                            )
+-                        ),
+-                        BOOLEAN('or'),
+-                        SCOPED_CLAUSE(
+-                            SEARCH_CLAUSE(
+-                                SEARCH_TERM(
+-                                    TERM('vuur')
+-                                )
++                                TERM('vuur')
+                             )
+                         )
+                     )
+@@ -283,20 +302,11 @@
+             )
+         )
+     )
+-)""", q.prettyPrint())
++)""", q.prettyPrint(), q.prettyPrint())
+ 
+     def testHashing(self):
+         self.assertEquals(hash(parseString('term')), hash(parseString('term')))
+ 
+-    def testReplaceChildren(self):
+-        t = TERM('term')
+-        t.replaceChildren('otherterm')
+-        self.assertEquals("TERM('otherterm')", str(t))
+-        q = parseString('field = value')
+-        s = q.children()[0].children()[0] #CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE ..
+-        s.replaceChildren(INDEX(TERM('index')), RELATION(COMPARITOR('exact')), SEARCH_TERM(TERM('value')))
+-        self.assertEquals('index exact value', cql2string(q))
+-
+     ### Helper methods
+     def assertException(self, exceptionClass, queryString, **kwargs):
+         try:
+@@ -304,3 +314,7 @@
+             self.fail()
+         except exceptionClass, e:
+             pass
++
++    def assertEqualsCQL(self, expected, result):
++        self.assertEquals(expected, result, "%s !=\n %s" % (expected.prettyPrint(), result.prettyPrint()))
++
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_1.5.4//test/cqltokenizertest.py version_1.6/test/cqltokenizertest.py
+--- version_1.5.4//test/cqltokenizertest.py	2010-09-16 10:28:18.000000000 +0200
++++ version_1.6/test/cqltokenizertest.py	2011-03-08 12:13:58.000000000 +0100
+@@ -24,12 +24,9 @@
+ 
+ import unittest
+ import re
+-from cqlparser.cqltokenizer import CQLTokenizer, tokenStack
++from cqlparser.cqltokenizer import tokenize
+ from cqlparser import CQLTokenizerException
+ 
+-def tokenize(s):
+-    return list(CQLTokenizer(s))
+-
+ class CQLTokenizerTest(unittest.TestCase):
+ 
+     def testTokens(self):
+@@ -54,77 +51,11 @@
+ 
+     def testUnfinishedLines(self):
+         try:
+-            tokenize('ab and "cd')
+-            self.fail()
++            r = tokenize('ab and "cd')
++            self.fail(r)
+         except CQLTokenizerException, e:
+             pass
+ 
+-    def testTokenStackOne(self):
+-        stack = tokenStack('term')
+-        self.assertTrue(stack.hasNext())
+-        self.assertEquals('term', stack.peek())
+-        self.assertEquals('term', stack.next())
+-        self.assertFalse(stack.hasNext())
+-        self.assertEquals('term', stack.prev())
+-        self.assertTrue(stack.hasNext())
+-        self.assertEquals('term', stack.next())
+-        try:
+-            stack.peek()
+-            self.fail()
+-        except StopIteration:
+-            pass
+-        try:
+-            stack.next()
+-            self.fail()
+-        except StopIteration:
+-            pass
+-        self.assertEquals(None, stack.safeNext())
+-
+-
+-    def testTokenStackTwo(self):
+-        stack = tokenStack('term term2')
+-        self.assertTrue(stack.hasNext())
+-        self.assertEquals('term', stack.next())
+-        self.assertTrue(stack.hasNext())
+-        self.assertEquals('term2', stack.next())
+-        self.assertFalse(stack.hasNext())
+-
+-    def testTokenStackBookmarksSingleCase(self):
+-        stack = tokenStack('term0 term1 term2 term3')
+-        self.assertEquals('term0', stack.peek())
+-        stack.bookmark()
+-        stack.next()
+-        stack.next()
+-        stack.revertToBookmark()
+-        self.assertEquals('term0', stack.peek())
+-
+-    def testTokenStackBookmarksAreStack(self):
+-        stack = tokenStack('term0 term1 term2 term3')
+-        self.assertEquals('term0', stack.peek())
+-        stack.bookmark()
+-        stack.next()
+-        self.assertEquals('term1', stack.peek())
+-        stack.bookmark()
+-        stack.next()
+-        stack.revertToBookmark()
+-        self.assertEquals('term1', stack.peek())
+-        stack.revertToBookmark()
+-        self.assertEquals('term0', stack.peek())
+-
+-    def testTokenStackBookmarksCanBeDropped(self):
+-        stack = tokenStack('term0 term1 term2 term3')
+-        self.assertEquals('term0', stack.peek())
+-        stack.bookmark()
+-        stack.next()
+-        self.assertEquals('term1', stack.peek())
+-        stack.bookmark()
+-        stack.next()
+-        self.assertEquals('term2', stack.peek())
+-        stack.dropBookmark()
+-        self.assertEquals('term2', stack.peek())
+-        stack.revertToBookmark()
+-        self.assertEquals('term0', stack.peek())
+-
+     def testBugReportedByErik(self):
+-        stack = tokenStack('lom.general.title="en" AND (lom.general.title="green" OR lom.general.title="red")')
+-        self.assertEquals(['lom.general.title', '=', '"en"', 'AND', '(', 'lom.general.title', '=', '"green"', 'OR', 'lom.general.title', '=', '"red"', ')'], stack._tokens)
++        stack = tokenize('lom.general.title="en" AND (lom.general.title="green" OR lom.general.title="red")')
++        self.assertEquals(['lom.general.title', '=', '"en"', 'AND', '(', 'lom.general.title', '=', '"green"', 'OR', 'lom.general.title', '=', '"red"', ')'], stack)
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_1.5.4//test/getlongestquery.py version_1.6/test/getlongestquery.py
+--- version_1.5.4//test/getlongestquery.py	1970-01-01 01:00:00.000000000 +0100
++++ version_1.6/test/getlongestquery.py	2011-03-08 12:13:58.000000000 +0100
+@@ -0,0 +1,8 @@
++longestline = ''
++for line in open('meresco3.queries'):
++    if len(line) > len(longestline):
++        longestline = line
++
++from urllib import unquote_plus
++from urlparse import urlparse, parse_qs
++print unquote_plus(parse_qs(urlparse(longestline).query)['query'][0])
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_1.5.4//test/ridiculouslongquery.txt version_1.6/test/ridiculouslongquery.txt
+--- version_1.5.4//test/ridiculouslongquery.txt	1970-01-01 01:00:00.000000000 +0100
++++ version_1.6/test/ridiculouslongquery.txt	2011-03-08 12:13:58.000000000 +0100
+@@ -0,0 +1 @@
++(lom.general.aggregationlevel=2 OR lom.general.aggregationlevel=3 OR lom.general.aggregationlevel=4) AND (about.repository exact anno OR about.repository exact ContentCorner OR about.repository exact Davindi OR about.repository exact digibordopschool OR about.repository exact DigilessenVO OR about.repository exact Digischool OR about.repository exact FreudenthalInstituut OR about.repository exact GroenKennisnet OR about.repository exact KlasCement OR about.repository exact LesbankNL OR about.repository exact OntwikkelcentrumDigitop OR about.repository exact OVC OR about.repository exact Samendelen_TLL_rw OR about.repository exact Samendelen_TLL_wo OR about.repository exact Samenmaken OR about.repository exact smaaklessen OR about.repository exact StudioVO OR about.repository exact TeleblikLessenbank OR about.repository exact sme OR about.repository exact webmaker_webquest OR about.repository exact Wiskunde_Open_Leermiddelenbank OR about.repository exact biodesk OR about.repository exact danae OR about.repository exact didac OR about.repository exact digimaster OR about.repository exact krantindeklas OR about.repository exact Lesidee OR about.repository exact math4all OR about.repository exact podium OR about.repository exact tumult OR about.repository exact wikiwijs_arrangeren OR about.repository exact wikiwijs_repository OR about.repository exact codenamefuture OR about.repository exact Leraar24_Dossier OR about.repository exact Leraar24_Video OR about.repository exact Zwijsen) AND (lom.educational.context=PO) AND (lom.classification.discipline=Arabisch OR lom.classification.discipline=Chinees OR lom.classification.discipline=Duits OR lom.classification.discipline=Engels OR lom.classification.discipline=Frans OR lom.classification.discipline=Fries OR lom.classification.discipline=Grieks OR lom.classification.discipline=Italiaans OR lom.classification.discipline=Latijn OR lom.classification.discipline=Nederlands OR lom.classification.discipline=Portugees OR lom.classification.discipline=Russisch OR lom.classification.discipline=Spaans OR lom.classification.discipline=Turks OR lom.classification.discipline=aardrijkskunde OR lom.classification.discipline=economie OR lom.classification.discipline=geschiedenis OR lom.classification.discipline=godsdienst OR lom.classification.discipline=maatschappijleer OR lom.classification.discipline=maatschappijwetenschappen OR lom.classification.discipline="management en organisatie" OR lom.classification.discipline="management en organisatie" OR lom.classification.discipline=wereldorientatie OR lom.classification.discipline="sociale vaardigheid" OR lom.classification.discipline="sociale vaardigheid" OR lom.classification.discipline="mens en maatschappij" OR lom.classification.discipline="mens en maatschappij" OR lom.classification.discipline="beeldende vorming" OR lom.classification.discipline="beeldende vorming" OR lom.classification.discipline="culturele en kunstzinnige vorming" OR lom.classification.discipline="culturele en kunstzinnige vorming" OR lom.classification.discipline=dans OR lom.classification.discipline=drama OR lom.classification.discipline=handvaardigheid OR lom.classification.discipline="klassieke culturele vorming" OR lom.classification.discipline="klassieke culturele vorming" OR lom.classification.discipline=kunst OR lom.classification.discipline="lichamelijke opvoeding" OR lom.classification.discipline="lichamelijke opvoeding" OR lom.classification.discipline=muziek OR lom.classification.discipline=tekenen OR lom.classification.discipline="textiele vormgeving" OR lom.classification.discipline="textiele vormgeving" OR lom.classification.discipline="kunst en cultuur" OR lom.classification.discipline="kunst en cultuur" OR lom.classification.discipline="audiovisuele vormgeving" OR lom.classification.discipline="audiovisuele vormgeving" OR lom.classification.discipline="bewegen en sport" OR lom.classification.discipline="bewegen en sport" OR lom.classification.discipline=verzorging OR lom.classification.discipline=administratie OR lom.classification.discipline="agrarische bedrijfseconomie" OR lom.classification.discipline="agrarische bedrijfseconomie" OR lom.classification.discipline="agrarische techniek" OR lom.classification.discipline="agrarische techniek" OR lom.classification.discipline="bloembinden en schikken" OR lom.classification.discipline="bloembinden en schikken" OR lom.classification.discipline="bouwtechniek - fijnhoutbewerking" OR lom.classification.discipline="bouwtechniek - fijnhoutbewerking" OR lom.classification.discipline="bouwtechniek - metselen" OR lom.classification.discipline="bouwtechniek - metselen" OR lom.classification.discipline="bouwtechniek - schilderen" OR lom.classification.discipline="bouwtechniek - schilderen" OR lom.classification.discipline="bouwtechniek - timmeren" OR lom.classification.discipline="bouwtechniek - timmeren" OR lom.classification.discipline="bouwtechniek breed" OR lom.classification.discipline="bouwtechniek breed" OR lom.classification.discipline="consumptief - bakken" OR lom.classification.discipline="consumptief - bakken" OR lom.classification.discipline="consumptief - horeca" OR lom.classification.discipline="consumptief - horeca" OR lom.classification.discipline=consumptief-breed OR lom.classification.discipline="dierhouderij en verzorging" OR lom.classification.discipline="dierhouderij en verzorging" OR lom.classification.discipline=grafimedia OR lom.classification.discipline="groene ruimte" OR lom.classification.discipline="groene ruimte" OR lom.classification.discipline="handel en administratie" OR lom.classification.discipline="handel en administratie" OR lom.classification.discipline="handel en verkoop" OR lom.classification.discipline="handel en verkoop" OR lom.classification.discipline=installatietechniek OR lom.classification.discipline="landbouw breed" OR lom.classification.discipline="landbouw breed" OR lom.classification.discipline=metaaltechniek OR lom.classification.discipline=metalektro OR lom.classification.discipline="mode en commercie" OR lom.classification.discipline="mode en commercie" OR lom.classification.discipline=plantenteelt OR lom.classification.discipline="sport, dienstverlening en veiligheid" OR lom.classification.discipline="sport, dienstverlening en veiligheid" OR lom.classification.discipline="techniek breed" OR lom.classification.discipline="techniek breed" OR lom.classification.discipline="technologie in de gemengde leerweg" OR lom.classification.discipline="technologie in de gemengde leerweg" OR lom.classification.discipline="transport en logistiek" OR lom.classification.discipline="transport en logistiek" OR lom.classification.discipline="uiterlijke verzorging" OR lom.classification.discipline="uiterlijke verzorging" OR lom.classification.discipline="verwerking agrarische producten" OR lom.classification.discipline="verwerking agrarische producten" OR lom.classification.discipline=voertuigentechniek OR lom.classification.discipline="zorg en welzijn breed" OR lom.classification.discipline="zorg en welzijn breed")
+diff --unidirectional-new-file '--exclude=*.so' '--exclude=*.o' '--exclude=.svn' '--exclude=*.pyc' '--exclude=deps.d' '--exclude=applied' --recursive --unified version_1.5.4//test/speedtest.py version_1.6/test/speedtest.py
+--- version_1.5.4//test/speedtest.py	1970-01-01 01:00:00.000000000 +0100
++++ version_1.6/test/speedtest.py	2011-03-08 12:13:58.000000000 +0100
+@@ -0,0 +1,55 @@
++from cq2utils import CQ2TestCase
++from cq2utils.profileit import profile
++from cqlparser import parseString, cql2string, CqlIdentityVisitor, CqlVisitor
++from time import time
++
++class SpeedTest(CQ2TestCase):
++
++    def testParser(self):
++        q = open('ridiculouslongquery.txt').read().strip()
++        def doParse():
++            for i in range(10):
++                r = parseString(q)
++        t0 = time()
++        doParse()
++        t1 = time()
++        #profile(doParse, runKCacheGrind = True)
++        self.assertTiming(0.058, t1-t0, 0.065) # bugfix with AND NOT (implementation following BNF)
++        #self.assertTiming(0.050, t1-t0, 0.054) # side effect of optimizing visitor
++        #self.assertTiming(0.053, t1-t0, 0.057) # used __slots__ in CqlAbstractNode
++        #self.assertTiming(0.060, t1-t0, 0.064) # inlined TokenStack (way less code!)
++        #self.assertTiming(0.074, t1-t0, 0.078) # let re do the tokenizing
++        #self.assertTiming(0.101, t1-t0, 0.103) # rewrote everything to try/except
++        #self.assertTiming(0.115, t1-t0, 0.120) # inlined _tryTerm and some _construct
++        #self.assertTiming(0.132, t1-t0, 0.136) # inlined _tryTerm and some _construct
++        #self.assertTiming(0.141, t1-t0, 0.149) # optimized _tryTerms
++        #self.assertTiming(0.155, t1-t0, 0.165) # replaced Stack with []
++        #self.assertTiming(0.180, t1-t0, 0.190) # start
++
++    def testIdentityVisitor(self):
++        p = parseString(open('ridiculouslongquery.txt').read().strip())
++        def doVisit():
++            for i in range(10):
++                CqlIdentityVisitor(p).visit()
++        t0 = time()
++        doVisit()
++        t1 = time()
++        #profile(doVisit, runKCacheGrind = True)
++        self.assertTiming(0.036, t1-t0, 0.041) # optimized identityvisitor
++        #self.assertTiming(0.050, t1-t0, 0.053) # made visitXYZ() optional
++        #self.assertTiming(0.064, t1-t0, 0.068) # replaced children() attr access and replaced tuple by list
++        #self.assertTiming(0.100, t1-t0, 0.110) # start
++
++    def testPartialVisitor(self):
++        class PartialVisitor(CqlVisitor):
++            def visitINDEX(self, node):
++                return node.visitChildren(self)
++        p = parseString(open('ridiculouslongquery.txt').read().strip())
++        def doVisit():
++            for i in range(10):
++                PartialVisitor(p).visit()
++        t0 = time()
++        doVisit()
++        t1 = time()
++        #profile(doVisit, runKCacheGrind = True)
++        self.assertTiming(0.020, t1-t0, 0.024) 
