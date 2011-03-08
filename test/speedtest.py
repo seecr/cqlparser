@@ -14,7 +14,8 @@ class SpeedTest(CQ2TestCase):
         doParse()
         t1 = time()
         #profile(doParse, runKCacheGrind = True)
-        self.assertTiming(0.050, t1-t0, 0.054) # side effect of optimizing visitor
+        self.assertTiming(0.058, t1-t0, 0.065) # bugfix with AND NOT (implementation following BNF)
+        #self.assertTiming(0.050, t1-t0, 0.054) # side effect of optimizing visitor
         #self.assertTiming(0.053, t1-t0, 0.057) # used __slots__ in CqlAbstractNode
         #self.assertTiming(0.060, t1-t0, 0.064) # inlined TokenStack (way less code!)
         #self.assertTiming(0.074, t1-t0, 0.078) # let re do the tokenizing
