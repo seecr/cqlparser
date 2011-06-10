@@ -56,6 +56,14 @@ class CQLTokenizerTest(unittest.TestCase):
         except CQLTokenizerException, e:
             pass
 
+    def testLongUnfinishedLinesDoesntCauseHanging(self):
+        # Production issue discovered and fixed on June 10 2011
+        try:
+            r = tokenize('abcdefghijklmnopqrstuvwx and "yz')
+            self.fail(r)
+        except CQLTokenizerException, e:
+            pass
+
     def testBugReportedByErik(self):
         stack = tokenize('lom.general.title="en" AND (lom.general.title="green" OR lom.general.title="red")')
         self.assertEquals(['lom.general.title', '=', '"en"', 'AND', '(', 'lom.general.title', '=', '"green"', 'OR', 'lom.general.title', '=', '"red"', ')'], stack)

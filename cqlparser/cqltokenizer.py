@@ -30,21 +30,23 @@ import re
 # charString1 is every token except a " ( ) > = < / and spaces
 charString1 = r'[^"()>=<\s/]+'
 # charString2 is every token surrounded by quotes "", except \"
-charString2 = r'(?s)\".*?(?:(?<!\\)\")'
+charString2 = r'(?s)".*?(?:(?<!\\)")'
 # tokens are charString1, charString2 or ( ) >= <> <= > < = /
 tokens = [ r'\(', r'\)', '>=', '<>', '<=', '>', '<', r'\=', r'\/', charString2, charString1 ]
 
 tokenSplitter = re.compile(r'\s*(%s)' % ('|'.join(tokens)))
-completeline = re.compile(r'^(\s*(%s))*\s*$' % ('|'.join(tokens)))
-TOKEN_GROUPNR = 1 # the one and only group.
 
 class CQLTokenizerException(Exception):
     pass
 
 def tokenize(text):
-    # removing next check avoids double parsing and improves SpeedTest.testParser() from
-    # 0.056 to 0.049.  But then the same type of checks must be done while parsing.
-    if not completeline.match(text):
+    tokens = tokenSplitter.findall(text)
+    if len(_withoutWhitespace(text)) != len(_withoutWhitespace(''.join(tokens))):
         raise CQLTokenizerException("Unrecognized token in '%s'" % text.replace("'", r"\'")) 
-    return tokenSplitter.findall(text)
+    return tokens
+
+
+whitespace = re.compile("\s+")
+def _withoutWhitespace(s):
+    return whitespace.sub('', s)
 

@@ -1,0 +1,87 @@
+Changeset created on Fri Jun 10 12:16:43 CEST 2011 by Seek You Too
+
+Description: Fix blocking regex in Tokenizer
+
+    For certain faulty queries the tokenizer blocked for a unacceptable period.
+    This is fixed by getting rid of one particularly complex regex.
+
+Baseline version: svn+ssh://svn@svn.cq2.org/svn/cqlparser/tags/version_1.6
+
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1.6/cqlparser/cqltokenizer.py version_1.6.1/cqlparser/cqltokenizer.py
+--- version_1.6/cqlparser/cqltokenizer.py	2011-03-08 13:41:34.000000000 +0100
++++ version_1.6.1/cqlparser/cqltokenizer.py	2011-06-10 12:11:05.000000000 +0200
+@@ -30,21 +30,23 @@
+ # charString1 is every token except a " ( ) > = < / and spaces
+ charString1 = r'[^"()>=<\s/]+'
+ # charString2 is every token surrounded by quotes "", except \"
+-charString2 = r'(?s)\".*?(?:(?<!\\)\")'
++charString2 = r'(?s)".*?(?:(?<!\\)")'
+ # tokens are charString1, charString2 or ( ) >= <> <= > < = /
+ tokens = [ r'\(', r'\)', '>=', '<>', '<=', '>', '<', r'\=', r'\/', charString2, charString1 ]
+ 
+ tokenSplitter = re.compile(r'\s*(%s)' % ('|'.join(tokens)))
+-completeline = re.compile(r'^(\s*(%s))*\s*$' % ('|'.join(tokens)))
+-TOKEN_GROUPNR = 1 # the one and only group.
+ 
+ class CQLTokenizerException(Exception):
+     pass
+ 
+ def tokenize(text):
+-    # removing next check avoids double parsing and improves SpeedTest.testParser() from
+-    # 0.056 to 0.049.  But then the same type of checks must be done while parsing.
+-    if not completeline.match(text):
++    tokens = tokenSplitter.findall(text)
++    if len(_withoutWhitespace(text)) != len(_withoutWhitespace(''.join(tokens))):
+         raise CQLTokenizerException("Unrecognized token in '%s'" % text.replace("'", r"\'")) 
+-    return tokenSplitter.findall(text)
++    return tokens
++
++
++whitespace = re.compile("\s+")
++def _withoutWhitespace(s):
++    return whitespace.sub('', s)
+ 
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1.6/test/cqltokenizertest.py version_1.6.1/test/cqltokenizertest.py
+--- version_1.6/test/cqltokenizertest.py	2011-03-08 13:41:34.000000000 +0100
++++ version_1.6.1/test/cqltokenizertest.py	2011-06-10 12:11:04.000000000 +0200
+@@ -56,6 +56,14 @@
+         except CQLTokenizerException, e:
+             pass
+ 
++    def testLongUnfinishedLinesDoesntCauseHanging(self):
++        # Production issue discovered and fixed on June 10 2011
++        try:
++            r = tokenize('abcdefghijklmnopqrstuvwx and "yz')
++            self.fail(r)
++        except CQLTokenizerException, e:
++            pass
++
+     def testBugReportedByErik(self):
+         stack = tokenize('lom.general.title="en" AND (lom.general.title="green" OR lom.general.title="red")')
+         self.assertEquals(['lom.general.title', '=', '"en"', 'AND', '(', 'lom.general.title', '=', '"green"', 'OR', 'lom.general.title', '=', '"red"', ')'], stack)
+diff --unidirectional-new-file --exclude='*.so' --exclude='*.o' --exclude=.svn --exclude='*.pyc' --exclude=deps.d --exclude=applied --recursive --unified version_1.6/testsetup.sh version_1.6.1/testsetup.sh
+--- version_1.6/testsetup.sh	1970-01-01 01:00:00.000000000 +0100
++++ version_1.6.1/testsetup.sh	2011-06-10 12:11:05.000000000 +0200
+@@ -0,0 +1,22 @@
++set -e
++
++rm -rf tmp build
++for pycmd in $(pyversions --installed); do
++
++$pycmd setup.py install --root tmp --install-scripts=usr/bin 
++
++export BINDIR=`pwd`/tmp/usr/bin
++if [ "$pycmd" == "python2.5" ]; then
++    export PYTHONPATH=`pwd`/tmp/usr/lib/python2.5/site-packages
++else
++    export PYTHONPATH=`pwd`/tmp/usr/local/lib/python2.6/dist-packages
++fi
++cp -r test tmp/test
++
++(
++cd tmp/test
++$pycmd alltests.py
++)
++
++rm -rf tmp build
++done
