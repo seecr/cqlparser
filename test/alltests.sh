@@ -1,8 +1,9 @@
+#!/bin/bash
 ## begin license ##
 #
 # "CQLParser" is a parser that builds a parsetree for the given CQL and can convert this into other formats.
 #
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2013 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "CQLParser"
 #
@@ -22,29 +23,18 @@
 #
 ## end license ##
 
-set -o errexit
-rm -rf tmp build
-mydir=$(cd $(dirname $0); pwd)
-source /usr/share/seecr-test/functions
-
-pyversions="2.6"
-if distro_is_debian_wheezy; then
-    pyversions="2.6 2.7"
+export LANG=en_US.UTF-8
+export PYTHONPATH=.:"$PYTHONPATH"
+pyversions="python2.6"
+if [ -e /usr/bin/python2.7 ]; then
+    pyversions="$pyversions python2.7"
 fi
-
-VERSION="x.y.z"
-
-for pyversion in $pyversions; do
-    definePythonVars $pyversion
-    echo "###### $pyversion, $PYTHON"
-    ${PYTHON} setup.py install --root tmp
+if [ "${option:0:10}" == "--python2." ]; then
+    shift
+    pyversions="${option:2}"
+fi
+echo Found Python versions: $pyversions
+for pycmd in $pyversions; do
+    echo "================ $t with $pycmd _alltests.py $@ ================"
+    $pycmd _alltests.py "$@"
 done
-cp -r test tmp/test
-removeDoNotDistribute tmp
-find tmp -name '*.py' -exec sed -r -e "
-    s/\\\$Version:[^\\\$]*\\\$/\\\$Version: ${VERSION}\\\$/;
-    " -i '{}' \;
-
-cp -r test tmp/test
-runtests "$@"
-rm -rf tmp build
