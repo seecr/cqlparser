@@ -22,7 +22,7 @@
 #
 ## end license ##
 
-from cqlvisitor import CqlVisitor
+from .cqlvisitor import CqlVisitor
 
 from re import compile
 quottableTermChars = compile(r'[\"\(\)\>\=\<\/\s]')

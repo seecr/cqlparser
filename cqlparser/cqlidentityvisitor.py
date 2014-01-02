@@ -22,8 +22,8 @@
 #
 ## end license ##
 
-from cqlvisitor import CqlVisitor
-from cqlparser import CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, MODIFIERLIST, MODIFIER, TERM, IDENTIFIER
+from .cqlvisitor import CqlVisitor
+from .cqlparser import CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, MODIFIERLIST, MODIFIER, TERM, IDENTIFIER
 
 
 class CqlIdentityVisitor(CqlVisitor):

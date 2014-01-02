@@ -312,7 +312,7 @@ class CQLParserTest(unittest.TestCase):
         try:
             parseString(queryString, **kwargs)
             self.fail()
-        except exceptionClass, e:
+        except exceptionClass as e:
             pass
 
     def assertEqualsCQL(self, expected, result):
