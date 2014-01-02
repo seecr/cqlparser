@@ -1,53 +1,53 @@
 ## begin license ##
 #
-#    CQLParser is a parser that builds a parsetree for the given CQL and
-#    can convert this into other formats.
-#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
+# "CQLParser" is a parser that builds a parsetree for the given CQL and can convert this into other formats.
 #
-#    This file is part of CQLParser
+# Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
+# Copyright (C) 2013 Seecr (Seek You Too B.V.) http://seecr.nl
 #
-#    CQLParser is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This file is part of "CQLParser"
 #
-#    CQLParser is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# "CQLParser" is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with CQLParser; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# "CQLParser" is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with "CQLParser"; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
 
 import unittest
-import re
 from cqlparser.cqltokenizer import tokenize
 from cqlparser import CQLTokenizerException
 
 class CQLTokenizerTest(unittest.TestCase):
 
     def testTokens(self):
-        self.assertEquals(['abc'], tokenize('abc'))
-        self.assertEquals(['abc','def'], tokenize('abc def'))
-        self.assertEquals(['(', 'abc',')', 'def'], tokenize('(abc) def'))
-        self.assertEquals(['(', r'"a \"bc\" d"',')', 'def'], tokenize(r'("a \"bc\" d") def'))
-        self.assertEquals(['"a"', 'AND', '"b"'], tokenize('"a" AND "b"'))
-        self.assertEquals(['(', '>', 'abc',')', 'def'], tokenize('( > abc) def'))
-        self.assertEquals([r'\\', r'bla\*bla'], tokenize(r'\\ bla\*bla'))
+        self.assertEqual(['abc'], tokenize('abc'))
+        self.assertEqual(['abc','def'], tokenize('abc def'))
+        self.assertEqual(['(', 'abc',')', 'def'], tokenize('(abc) def'))
+        self.assertEqual(['(', r'"a \"bc\" d"',')', 'def'], tokenize(r'("a \"bc\" d") def'))
+        self.assertEqual(['"a"', 'AND', '"b"'], tokenize('"a" AND "b"'))
+        self.assertEqual(['(', '>', 'abc',')', 'def'], tokenize('( > abc) def'))
+        self.assertEqual([r'\\', r'bla\*bla'], tokenize(r'\\ bla\*bla'))
         # Test cases from http://loc.gov/cql
-        self.assertEquals(['dinosaur'], tokenize('dinosaur'))
-        self.assertEquals(['"complete dinosaur"'], tokenize('"complete dinosaur"'))
-        self.assertEquals(['title', '=', '"complete dinosaur"'], tokenize('title = "complete dinosaur"'))
-        self.assertEquals(['title', 'exact', '"the complete dinosaur"'], tokenize('title exact "the complete dinosaur"'))
-        self.assertEquals(['(', 'bird', 'or', 'dinosaur', ')', 'and', '(', 'feathers', 'or', 'scales', ')'], tokenize('(bird or dinosaur) and (feathers or scales)'))
-        self.assertEquals(['"feathered dinosaur"', 'and', '(', 'yixian', 'or', 'jehol', ')'], tokenize('"feathered dinosaur" and (yixian or jehol)'))
-        self.assertEquals(['lengthOfFemur', '>', '2.4'], tokenize('lengthOfFemur > 2.4'))
-        self.assertEquals(['bioMass', '>=', '100'], tokenize('bioMass >= 100'))
-        self.assertEquals(['"dino(saur)"'], tokenize('"dino(saur)"'))
-        self.assertEquals(['"\nterm with newline"'], tokenize('"\nterm with newline"'))
+        self.assertEqual(['dinosaur'], tokenize('dinosaur'))
+        self.assertEqual(['"complete dinosaur"'], tokenize('"complete dinosaur"'))
+        self.assertEqual(['title', '=', '"complete dinosaur"'], tokenize('title = "complete dinosaur"'))
+        self.assertEqual(['title', 'exact', '"the complete dinosaur"'], tokenize('title exact "the complete dinosaur"'))
+        self.assertEqual(['(', 'bird', 'or', 'dinosaur', ')', 'and', '(', 'feathers', 'or', 'scales', ')'], tokenize('(bird or dinosaur) and (feathers or scales)'))
+        self.assertEqual(['"feathered dinosaur"', 'and', '(', 'yixian', 'or', 'jehol', ')'], tokenize('"feathered dinosaur" and (yixian or jehol)'))
+        self.assertEqual(['lengthOfFemur', '>', '2.4'], tokenize('lengthOfFemur > 2.4'))
+        self.assertEqual(['bioMass', '>=', '100'], tokenize('bioMass >= 100'))
+        self.assertEqual(['"dino(saur)"'], tokenize('"dino(saur)"'))
+        self.assertEqual(['"\nterm with newline"'], tokenize('"\nterm with newline"'))
 
     def testUnfinishedLines(self):
         try:
@@ -66,4 +66,4 @@ class CQLTokenizerTest(unittest.TestCase):
 
     def testBugReportedByErik(self):
         stack = tokenize('lom.general.title="en" AND (lom.general.title="green" OR lom.general.title="red")')
-        self.assertEquals(['lom.general.title', '=', '"en"', 'AND', '(', 'lom.general.title', '=', '"green"', 'OR', 'lom.general.title', '=', '"red"', ')'], stack)
+        self.assertEqual(['lom.general.title', '=', '"en"', 'AND', '(', 'lom.general.title', '=', '"green"', 'OR', 'lom.general.title', '=', '"red"', ')'], stack)
