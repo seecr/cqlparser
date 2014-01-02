@@ -1,25 +1,26 @@
 # -*- coding: utf-8 -*-
 ## begin license ##
 #
-#    CQLParser is a parser that builds a parsetree for the given CQL and
-#    can convert this into other formats.
-#    Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
+# "CQLParser" is a parser that builds a parsetree for the given CQL and can convert this into other formats.
 #
-#    This file is part of CQLParser
+# Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
+# Copyright (C) 2013 Seecr (Seek You Too B.V.) http://seecr.nl
 #
-#    CQLParser is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This file is part of "CQLParser"
 #
-#    CQLParser is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# "CQLParser" is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with CQLParser; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# "CQLParser" is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with "CQLParser"; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
 
@@ -46,7 +47,7 @@ class Cql2StringTest(TestCase):
         self.assertCql('field1=term1 AND field2 exact term2')
         self.assertCql('field1 > 3')
         self.assertCql('field1 >= 3')
-        
+
     def testBraces(self):
         self.assertCql('field1=term1 AND (term2 OR term3)')
 
@@ -56,6 +57,6 @@ class Cql2StringTest(TestCase):
     def assertCql(self, expected, input=None):
         if input == None:
             input = expected
-        self.assertEquals(expected, cql2string(parseString(input)))
+        self.assertEqual(expected, cql2string(parseString(input)))
         self.assertTrue(parseString(expected))
-        
+

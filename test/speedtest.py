@@ -30,7 +30,8 @@ from time import time
 class SpeedTest(SeecrTestCase):
 
     def testParser(self):
-        q = open('ridiculouslongquery.txt').read().strip()
+        with open('ridiculouslongquery.txt') as f:
+            q = f.read().strip()
         def doParse():
             for i in range(10):
                 r = parseString(q)
@@ -51,7 +52,8 @@ class SpeedTest(SeecrTestCase):
         #self.assertTiming(0.180, t1-t0, 0.190) # start
 
     def testIdentityVisitor(self):
-        p = parseString(open('ridiculouslongquery.txt').read().strip())
+        with open('ridiculouslongquery.txt') as f:
+            p = parseString(f.read())
         def doVisit():
             for i in range(10):
                 CqlIdentityVisitor(p).visit()
@@ -68,7 +70,8 @@ class SpeedTest(SeecrTestCase):
         class PartialVisitor(CqlVisitor):
             def visitINDEX(self, node):
                 return node.visitChildren(self)
-        p = parseString(open('ridiculouslongquery.txt').read().strip())
+        with open('ridiculouslongquery.txt') as f:
+            p = parseString(f.read())
         def doVisit():
             for i in range(10):
                 PartialVisitor(p).visit()
@@ -76,4 +79,4 @@ class SpeedTest(SeecrTestCase):
         doVisit()
         t1 = time()
         #profile(doVisit, runKCacheGrind = True)
-        self.assertTiming(0.020, t1-t0, 0.024) 
+        self.assertTiming(0.020, t1-t0, 0.024)

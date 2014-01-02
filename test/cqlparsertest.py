@@ -1,25 +1,26 @@
 # -*- coding: utf-8 -*-
 ## begin license ##
 #
-#    CQLParser is a parser that builds a parsetree for the given CQL and
-#    can convert this into other formats.
-#    Copyright (C) 2005-2011 Seek You Too (CQ2) http://www.cq2.nl
+# "CQLParser" is a parser that builds a parsetree for the given CQL and can convert this into other formats.
 #
-#    This file is part of CQLParser
+# Copyright (C) 2005-2011 Seek You Too (CQ2) http://www.cq2.nl
+# Copyright (C) 2013 Seecr (Seek You Too B.V.) http://seecr.nl
 #
-#    CQLParser is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This file is part of "CQLParser"
 #
-#    CQLParser is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# "CQLParser" is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with CQLParser; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# "CQLParser" is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with "CQLParser"; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
 
@@ -41,7 +42,7 @@ class CQLParserTest(unittest.TestCase):
         self.assertEqualsCQL(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))))), parseString('term'))
         self.assertEqualsCQL(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('white space'))))), parseString('"white space"'))
         self.assertEqualsCQL(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('string "quotes"'))))), parseString(r'"string \"quotes\""'))
-    
+
     def testTermWithOrWithoutQuotes(self):
         self.assertEqualsCQL(parseString('"cats"'), parseString('cats'))
 
@@ -96,7 +97,7 @@ class CQLParserTest(unittest.TestCase):
             )
         )
         self.assertEqualsCQL(answer, parseString('term1 or term2 and term3'))
-        
+
     def testPrecedenceAndOr2(self):
         answer = CQL_QUERY(
             SCOPED_CLAUSE(
@@ -233,15 +234,15 @@ class CQLParserTest(unittest.TestCase):
 
         mockVisitor = MockVisitor()
         q.accept(mockVisitor)
-        self.assertEquals(1, mockVisitor.visitCQL_QUERY_called)
-        self.assertEquals(q, mockVisitor.visitCQL_QUERY_args[0])
+        self.assertEqual(1, mockVisitor.visitCQL_QUERY_called)
+        self.assertEqual(q, mockVisitor.visitCQL_QUERY_args[0])
         c.accept(mockVisitor)
-        self.assertEquals(1, mockVisitor.visitCOMPARITOR_called)
-        self.assertEquals(c, mockVisitor.visitCOMPARITOR_args[0])
+        self.assertEqual(1, mockVisitor.visitCOMPARITOR_called)
+        self.assertEqual(c, mockVisitor.visitCOMPARITOR_args[0])
 
     def testName(self):
         q = CQL_QUERY(None)
-        self.assertEquals("CQL_QUERY", q.name)
+        self.assertEqual("CQL_QUERY", q.name)
 
     def testVisitReturnValue(self):
         q = CQL_QUERY(None)
@@ -250,11 +251,11 @@ class CQLParserTest(unittest.TestCase):
                 return 'nut'
         mockVisitor = MockVisitor()
         value = q.accept(mockVisitor)
-        self.assertEquals('nut', value)
+        self.assertEqual('nut', value)
 
     def testPrettyPrintSimple(self):
         q = parseString('aap')
-        self.assertEquals("""CQL_QUERY(
+        self.assertEqual("""CQL_QUERY(
     SCOPED_CLAUSE(
         SEARCH_CLAUSE(
             SEARCH_TERM(
@@ -266,7 +267,7 @@ class CQLParserTest(unittest.TestCase):
 
     def testPrettyPrintComplex(self):
         q = parseString('aap AND (noot = mies OR vuur)')
-        self.assertEquals("""CQL_QUERY(
+        self.assertEqual("""CQL_QUERY(
     SCOPED_CLAUSE(
         SCOPED_CLAUSE(
             SEARCH_CLAUSE(
@@ -305,7 +306,7 @@ class CQLParserTest(unittest.TestCase):
 )""", q.prettyPrint(), q.prettyPrint())
 
     def testHashing(self):
-        self.assertEquals(hash(parseString('term')), hash(parseString('term')))
+        self.assertEqual(hash(parseString('term')), hash(parseString('term')))
 
     ### Helper methods
     def assertException(self, exceptionClass, queryString, **kwargs):
@@ -316,5 +317,5 @@ class CQLParserTest(unittest.TestCase):
             pass
 
     def assertEqualsCQL(self, expected, result):
-        self.assertEquals(expected, result, "%s !=\n %s" % (expected.prettyPrint(), result.prettyPrint()))
+        self.assertEqual(expected, result, "%s !=\n %s" % (expected.prettyPrint(), result.prettyPrint()))
 
