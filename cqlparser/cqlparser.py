@@ -23,7 +23,7 @@
 #
 ## end license ##
 
-from cqltokenizer import tokenize
+from .cqltokenizer import tokenize
 
 DEFAULTCOMPARITORS = ['=', '>', '<', '>=', '<=', '<>', '==', 'any', 'all', 'adj', 'within', 'encloses', 'exact']
 

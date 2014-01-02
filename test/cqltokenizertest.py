@@ -53,7 +53,7 @@ class CQLTokenizerTest(unittest.TestCase):
         try:
             r = tokenize('ab and "cd')
             self.fail(r)
-        except CQLTokenizerException, e:
+        except CQLTokenizerException as e:
             pass
 
     def testLongUnfinishedLinesDoesntCauseHanging(self):
@@ -61,7 +61,7 @@ class CQLTokenizerTest(unittest.TestCase):
         try:
             r = tokenize('abcdefghijklmnopqrstuvwx and "yz')
             self.fail(r)
-        except CQLTokenizerException, e:
+        except CQLTokenizerException as e:
             pass
 
     def testBugReportedByErik(self):
