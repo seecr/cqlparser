@@ -29,6 +29,9 @@ pyversions="python2.6"
 if [ -e /usr/bin/python2.7 ]; then
     pyversions="$pyversions python2.7"
 fi
+if [ -e /usr/bin/python3.2 ]; then
+    pyversions="$pyversions python3.2"
+fi
 if [ "${option:0:10}" == "--python2." ]; then
     shift
     pyversions="${option:2}"
