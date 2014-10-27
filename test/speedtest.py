@@ -59,7 +59,7 @@ class SpeedTest(SeecrTestCase):
         doVisit()
         t1 = time()
         #profile(doVisit, runKCacheGrind = True)
-        self.assertTiming(0.036, t1-t0, 0.041) # optimized identityvisitor
+        self.assertTiming(0.032, t1-t0, 0.041) # optimized identityvisitor
         #self.assertTiming(0.050, t1-t0, 0.053) # made visitXYZ() optional
         #self.assertTiming(0.064, t1-t0, 0.068) # replaced children() attr access and replaced tuple by list
         #self.assertTiming(0.100, t1-t0, 0.110) # start
@@ -76,4 +76,4 @@ class SpeedTest(SeecrTestCase):
         doVisit()
         t1 = time()
         #profile(doVisit, runKCacheGrind = True)
-        self.assertTiming(0.020, t1-t0, 0.024) 
+        self.assertTiming(0.018, t1-t0, 0.024) 
