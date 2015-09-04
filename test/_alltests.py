@@ -3,7 +3,8 @@
 # "CQLParser" is a parser that builds a parsetree for the given CQL and can convert this into other formats.
 #
 # Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2015 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2015 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "CQLParser"
 #
@@ -37,6 +38,7 @@ import unittest
 from cqlparsertest import CQLParserTest
 from cqltokenizertest import CQLTokenizerTest
 from cqlidentityvisitortest import CqlIdentityVisitorTest
+from cqltoexpressiontest import CqlToExpressionTest
 from cql2stringtest import Cql2StringTest
 from speedtest import SpeedTest
 
