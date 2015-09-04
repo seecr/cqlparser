@@ -81,6 +81,7 @@ class CqlToExpressionVisitor(CqlVisitor):
 class QueryExpression(object):
     def __init__(self, **kwargs):
         self.operator = None
+        self.relation_boost = None
         self.must_not = False
         for k,v in kwargs.items():
             setattr(self, k, v)
