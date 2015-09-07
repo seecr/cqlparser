@@ -138,7 +138,7 @@ class QueryExpression(object):
                     ' '*indent,
                     '!' if getattr(self, 'must_not', False) else '',
                     self.index or '',
-                    self.relation or '',
+                    ' {0} '.format(self.relation) if self.relation else '',
                     self.term,
                 )
 

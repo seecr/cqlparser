@@ -150,7 +150,7 @@ AND
     aap
     !OR
         noot
-        title=mies\
+        title = mies\
 """, pretty)
 
 
