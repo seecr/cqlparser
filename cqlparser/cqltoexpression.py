@@ -124,3 +124,23 @@ class QueryExpression(object):
         if operands:
             result.operands = [cls.fromDict(o) for o in operands]
         return result
+
+    def _toString(self, indent=0):
+        operator = getattr(self, 'operator', None)
+        if operator:
+            yield "{0}{1}{2}".format(' '*indent,
+                    '!' if getattr(self, 'must_not', False) else '',
+                    operator)
+            for operand in self.operands:
+                yield '\n'.join(operand._toString(indent+4))
+        else:
+            yield "{0}{1}{2}{3}{4}".format(
+                    ' '*indent,
+                    '!' if getattr(self, 'must_not', False) else '',
+                    self.index or '',
+                    self.relation or '',
+                    self.term,
+                )
+
+    def toString(self, pretty_print=True):
+        return '\n'.join(self._toString(indent=0))

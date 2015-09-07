@@ -142,23 +142,18 @@ class CqlToExpressionTest(SeecrTestCase):
         self.assertEquals(dict, type(d))
         self.assertEquals(expression, QueryExpression.fromDict(d))
 
+    def testPrettyPrint(self):
+        expression = cqlToExpression('aap NOT (noot OR title=mies)')
+        pretty = expression.toString(pretty_print=True)
+        self.assertEquals("""\
+AND
+    aap
+    !OR
+        noot
+        title=mies\
+""", pretty)
 
-def pprintE(expression, indent=0):
-    operator = getattr(expression, 'operator', None)
-    if operator:
-        print "{0}{1}{2}".format(' '*indent,
-                '!' if getattr(expression, 'must_not', False) else '',
-                operator)
-        for operand in expression.operands:
-            pprintE(operand, indent+1)
-    else:
-        print "{0}{1}{2}{3}{4}".format(
-                ' '*indent,
-                '!' if getattr(expression, 'must_not', False) else '',
-                expression.index or '',
-                expression.relation or '',
-                expression.term,
-            )
+
 
 def QE(aString, **kwargs):
     if '=' in aString:
