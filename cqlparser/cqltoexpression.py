@@ -27,9 +27,12 @@
 ## end license ##
 
 from cqlvisitor import CqlVisitor
+from cqlparser import parseString as parseCql
 
-def cqlToExpression(cqlAbstractSyntaxTree):
-    return CqlToExpressionVisitor(cqlAbstractSyntaxTree).visit()
+def cqlToExpression(cql):
+    if not hasattr(cql, 'accept'):
+        cql = parseCql(cql)
+    return CqlToExpressionVisitor(cql).visit()
 
 class CqlToExpressionVisitor(CqlVisitor):
     def visitCQL_QUERY(self, node):

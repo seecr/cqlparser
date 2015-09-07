@@ -27,48 +27,48 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase
-from cqlparser import parseString as parseCql
 from cqlparser.cqltoexpression import cqlToExpression, QueryExpression
+from cqlparser import parseString as parseCql
 
 class CqlToExpressionTest(SeecrTestCase):
 
     def testSimpleExpression(self):
-        expression = toExpression('field=value')
+        expression = cqlToExpression(parseCql('field=value'))
         self.assertEquals("field", expression.index)
         self.assertEquals("=", expression.relation)
         self.assertEquals("value", expression.term)
 
     def testSimpleExpressionWithParenthesis(self):
-        expression = toExpression('((field=value))')
+        expression = cqlToExpression('((field=value))')
         self.assertEquals("field", expression.index)
         self.assertEquals("=", expression.relation)
         self.assertEquals("value", expression.term)
 
     def testSimpleExpressionWithoutIndex(self):
-        expression = toExpression('value')
+        expression = cqlToExpression('value')
         self.assertEquals(None, expression.index)
         self.assertEquals(None, expression.relation)
         self.assertEquals("value", expression.term)
 
     def testAndExpression(self):
-        expression = toExpression('field0=value0 AND field1=value1')
+        expression = cqlToExpression('field0=value0 AND field1=value1')
         self.assertEquals("AND", expression.operator)
         self.assertEquals(2, len(expression.operands))
         self.assertEquals(['field0', 'field1'], [e.index for e in expression.operands])
 
     def testAndExpressionMoreThanOne(self):
-        expression = toExpression('field0=value0 AND field1=value1 AND field2 = value2')
+        expression = cqlToExpression('field0=value0 AND field1=value1 AND field2 = value2')
         self.assertEquals("AND", expression.operator)
         self.assertEquals(3, len(expression.operands))
         self.assertEquals([QE('field0=value0'), QE('field1=value1'), QE('field2=value2')], expression.operands)
-        expression = toExpression('field0=value0 AND (field1=value1 AND field2=value2)')
+        expression = cqlToExpression('field0=value0 AND (field1=value1 AND field2=value2)')
         self.assertEquals(QueryExpression(
                 operator='AND',
                 operands=[QE('field0=value0'), QE('field1=value1'), QE('field2=value2')],
             ), expression)
 
     def testOrExpressions(self):
-        expression = toExpression('field0=value0 AND field1=value1 OR field2 = value2')
+        expression = cqlToExpression('field0=value0 AND field1=value1 OR field2 = value2')
         self.assertEquals(QueryExpression(
                 operator='OR',
                 operands=[
@@ -82,10 +82,10 @@ class CqlToExpressionTest(SeecrTestCase):
                     QE('field2=value2'),
                 ]
             ), expression)
-        expression2 = toExpression('(field0=value0 AND field1=value1) OR field2 = value2')
+        expression2 = cqlToExpression('(field0=value0 AND field1=value1) OR field2 = value2')
         self.assertEquals(expression, expression2)
 
-        expression = toExpression('field0=value0 AND (field1=value1 OR field2 = value2)')
+        expression = cqlToExpression('field0=value0 AND (field1=value1 OR field2 = value2)')
         self.assertEquals(QueryExpression(
                 operator='AND',
                 operands=[
@@ -101,7 +101,7 @@ class CqlToExpressionTest(SeecrTestCase):
             ), expression)
 
     def testNot(self):
-        expression = toExpression('term NOT thisterm')
+        expression = cqlToExpression('term NOT thisterm')
         self.assertEquals(QueryExpression(
                 operator='AND',
                 operands=[
@@ -111,7 +111,7 @@ class CqlToExpressionTest(SeecrTestCase):
             ), expression)
 
     def testNotNested(self):
-        expression = toExpression('term NOT (A AND B)')
+        expression = cqlToExpression('term NOT (A AND B)')
         self.assertEquals(QueryExpression(
                 operator='AND',
                 operands=[
@@ -130,14 +130,14 @@ class CqlToExpressionTest(SeecrTestCase):
 
     def testEquals(self):
         self.assertEquals(QueryExpression(index='field', relation='=', term='term'), QueryExpression(index='field', relation='=', term='term'))
-        self.assertEquals(toExpression('field=value AND otherfield=othervalue'), QueryExpression(operator='AND', operands=[QE('field=value'), QE('otherfield=othervalue')]))
+        self.assertEquals(cqlToExpression('field=value AND otherfield=othervalue'), QueryExpression(operator='AND', operands=[QE('field=value'), QE('otherfield=othervalue')]))
 
     def testBoost(self):
-        expression = toExpression("title =/boost=2.0 cats")
+        expression = cqlToExpression("title =/boost=2.0 cats")
         self.assertEqual(QE('title=cats', relation_boost=2.0), expression)
 
     def testAsDictFromDict(self):
-        expression = toExpression('aap NOT (noot OR title=mies) AND subject =/boost=3.0 boeien')
+        expression = cqlToExpression('aap NOT (noot OR title=mies) AND subject =/boost=3.0 boeien')
         d = expression.asDict()
         self.assertEquals(dict, type(d))
         self.assertEquals(expression, QueryExpression.fromDict(d))
@@ -169,7 +169,3 @@ def QE(aString, **kwargs):
         setattr(result, k, v)
     return result
 
-
-def toExpression(cqlstring):
-    ast = parseCql(cqlstring)
-    return cqlToExpression(ast)
