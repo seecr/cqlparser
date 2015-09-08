@@ -157,6 +157,12 @@ AND
         title = mies\
 """, pretty)
 
+    def testAcceptsCqlAstAndQueryExpression(self):
+        a = cqlToExpression('field = value')
+        b = cqlToExpression(parseCql('field = value'))
+        c = cqlToExpression(b)
+        self.assertEquals(a, b)
+        self.assertEquals(a, c)
 
 
 def QE(aString, **kwargs):

@@ -30,6 +30,8 @@ from cqlvisitor import CqlVisitor
 from cqlparser import parseString as parseCql
 
 def cqlToExpression(cql):
+    if isinstance(cql, QueryExpression):
+        return cql
     if not hasattr(cql, 'accept'):
         cql = parseCql(cql)
     return CqlToExpressionVisitor(cql).visit()
