@@ -131,6 +131,10 @@ class CqlToExpressionTest(SeecrTestCase):
     def testEquals(self):
         self.assertEquals(QueryExpression(index='field', relation='=', term='term'), QueryExpression(index='field', relation='=', term='term'))
         self.assertEquals(cqlToExpression('field=value AND otherfield=othervalue'), QueryExpression(operator='AND', operands=[QE('field=value'), QE('otherfield=othervalue')]))
+        self.assertTrue(QueryExpression.searchterm('a') == QueryExpression.searchterm('a'))
+        self.assertFalse(QueryExpression.searchterm('a') != QueryExpression.searchterm('a'))
+        self.assertFalse(QueryExpression.searchterm('a') == QueryExpression.searchterm('b'))
+        self.assertTrue(QueryExpression.searchterm('a') != QueryExpression.searchterm('b'))
 
     def testBoost(self):
         expression = cqlToExpression("title =/boost=2.0 cats")

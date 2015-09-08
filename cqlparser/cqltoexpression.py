@@ -93,9 +93,10 @@ class QueryExpression(object):
         return 'QueryExpression(' + ', '.join(sorted('%s=%s'%(k,repr(v)) for k, v in self.__dict__.items() if not k.startswith('_'))) +')'
 
     def __eq__(self, other):
-        if not isinstance(other, QueryExpression):
-            raise ValueError('Expected other')
-        return self.__dict__ == other.__dict__
+        return isinstance(other, QueryExpression) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     @classmethod
     def nested(cls, operator):
