@@ -128,6 +128,13 @@ class QueryExpression(object):
             result.operands = [cls.fromDict(o) for o in operands]
         return result
 
+    def iter(self):
+        yield self
+        if self.operator:
+            for operand in self.operands:
+                for f in operand.iter():
+                    yield f
+
     def _toString(self, indent=0):
         operator = getattr(self, 'operator', None)
         if operator:

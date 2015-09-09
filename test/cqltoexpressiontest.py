@@ -164,6 +164,18 @@ AND
         self.assertEquals(a, b)
         self.assertEquals(a, c)
 
+    def testIter(self):
+        qe = cqlToExpression('aap NOT (noot OR title=mies)')
+        result = list(qe.iter())
+        self.assertEquals(qe, result[0])
+        self.assertEquals(cqlToExpression('aap'), result[1])
+        r2 = cqlToExpression('noot OR title=mies')
+        r2.must_not = True
+        self.assertEquals(r2, result[2])
+        self.assertEquals(cqlToExpression('noot'), result[3])
+        self.assertEquals(cqlToExpression('title=mies'), result[4])
+
+
 
 def QE(aString, **kwargs):
     if '=' in aString:
