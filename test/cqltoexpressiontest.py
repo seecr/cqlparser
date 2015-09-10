@@ -148,14 +148,18 @@ class CqlToExpressionTest(SeecrTestCase):
 
     def testPrettyPrint(self):
         expression = cqlToExpression('aap NOT (noot OR title=mies)')
-        pretty = expression.toString(pretty_print=True)
+        prettyTrue = expression.toString(pretty_print=True)
         self.assertEquals("""\
 AND
-    aap
+    'aap'
     !OR
-        noot
-        title = mies\
-""", pretty)
+        'noot'
+        'title = mies'\
+""", prettyTrue)
+        prettyDefault = expression.toString()
+        self.assertEquals(prettyTrue, prettyDefault)
+        prettyFalse = expression.toString(pretty_print=False)
+        self.assertEquals("AND['aap', !OR['noot', 'title = mies']]", prettyFalse)
 
     def testAcceptsCqlAstAndQueryExpression(self):
         a = cqlToExpression('field = value')
@@ -182,6 +186,12 @@ AND
         self.assertEquals(cqlToExpression('aap AND fiets'), qe)
         qe.operands[0].replaceWith(cqlToExpression('boom OR vis'))
         self.assertEquals(cqlToExpression('(boom OR vis) AND fiets'), qe)
+
+    def testRepr(self):
+        qe = cqlToExpression('aap NOT (noot OR title=mies)')
+        self.assertEquals("""QueryExpression(\
+AND['aap', !OR['noot', 'title = mies']])\
+""", repr(qe))
 
 
 

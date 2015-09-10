@@ -31,15 +31,6 @@ class QueryExpression(object):
         for k,v in kwargs.items():
             setattr(self, k, v)
 
-    def __repr__(self):
-        return 'QueryExpression(' + ', '.join(sorted('%s=%s'%(k,repr(v)) for k, v in self.__dict__.items() if not k.startswith('_'))) +')'
-
-    def __eq__(self, other):
-        return isinstance(other, QueryExpression) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
     @classmethod
     def nested(cls, operator):
         return cls(operator=operator, operands=[])
@@ -56,6 +47,12 @@ class QueryExpression(object):
 
     def isSearchterm(self):
         return not self.isNested()
+
+    def __eq__(self, other):
+        return isinstance(other, QueryExpression) and self.__dict__ == other.__dict__
+
+    def __ne__(self, other):
+        return not self.__eq__(other)
 
     def asDict(self):
         result = {}
@@ -81,29 +78,49 @@ class QueryExpression(object):
                 for f in operand.iter():
                     yield f
 
-    def _toString(self, indent=0):
-        operator = getattr(self, 'operator', None)
-        if operator:
-            yield "{0}{1}{2}".format(' '*indent,
-                    '!' if getattr(self, 'must_not', False) else '',
-                    operator)
-            for operand in self.operands:
-                yield '\n'.join(operand._toString(indent+4))
-        else:
-            yield "{0}{1}{2}{3}{4}".format(
-                    ' '*indent,
-                    '!' if getattr(self, 'must_not', False) else '',
-                    self.index or '',
-                    ' {0} '.format(self.relation) if self.relation else '',
-                    self.term,
-                )
-
-    def toString(self, pretty_print=True):
-        return '\n'.join(self._toString(indent=0))
-
     def replaceWith(self, expression):
         for k in self.__dict__.keys():
             delattr(self, k)
         for k,v in expression.__dict__.items():
             setattr(self, k, v)
+
+    def toString(self, pretty_print=True):
+        return ''.join(self._repr(indent=0 if pretty_print else None))
+
+    def __str__(self):
+        return ''.join(self._repr())
+
+    def __repr__(self):
+        return 'QueryExpression(' + str(self) + ')'
+
+    def _repr(self, indent=None):
+        prefix = lambda indent: '' if indent is None else '    '*indent
+        # yield prefix(indent)
+        if self.must_not:
+            yield '!'
+        if self.operator:
+            yield self.operator
+            if indent is None:
+                yield '['
+                commaRepl = ', '
+            else:
+                commaRepl = '\n'
+                yield '\n'
+                indent += 1
+            comma = ''
+            for operand in self.operands:
+                yield comma
+                yield prefix(indent)
+                comma = commaRepl
+                yield ''.join(operand._repr(indent))
+            if indent is None:
+                yield ']'
+            else:
+                indent -= 1
+        else:
+            yield repr(' '.join(r for r in [
+                        self.index or '',
+                        self.relation or '',
+                        self.term
+                    ] if r))
 
