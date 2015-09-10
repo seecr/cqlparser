@@ -74,7 +74,7 @@ class QueryExpression(object):
     def iter(self):
         yield self
         if self.operator:
-            for operand in self.operands:
+            for operand in self.operands[:]:
                 for f in operand.iter():
                     yield f
 
@@ -95,7 +95,6 @@ class QueryExpression(object):
 
     def _repr(self, indent=None):
         prefix = lambda indent: '' if indent is None else '    '*indent
-        # yield prefix(indent)
         if self.must_not:
             yield '!'
         if self.operator:
