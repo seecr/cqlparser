@@ -175,6 +175,15 @@ AND
         self.assertEquals(cqlToExpression('noot'), result[3])
         self.assertEquals(cqlToExpression('title=mies'), result[4])
 
+    def testReplaceWith(self):
+        qe = cqlToExpression('aap AND noot')
+        replacement = cqlToExpression('fiets')
+        qe.operands[1].replaceWith(replacement)
+        self.assertEquals(cqlToExpression('aap AND fiets'), qe)
+        qe.operands[0].replaceWith(cqlToExpression('boom OR vis'))
+        self.assertEquals(cqlToExpression('(boom OR vis) AND fiets'), qe)
+
+
 
 
 def QE(aString, **kwargs):

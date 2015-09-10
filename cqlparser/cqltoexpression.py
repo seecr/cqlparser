@@ -28,6 +28,7 @@
 
 from cqlvisitor import CqlVisitor
 from cqlparser import parseString as parseCql
+from ._queryexpression import QueryExpression
 
 def cqlToExpression(cql):
     if isinstance(cql, QueryExpression):
@@ -82,75 +83,3 @@ class CqlToExpressionVisitor(CqlVisitor):
             (relation, (modifier, comparitor, value)) = results
             boost = float(value)
         return relation, boost
-
-class QueryExpression(object):
-    def __init__(self, **kwargs):
-        self.operator = None
-        self.relation_boost = None
-        self.must_not = False
-        for k,v in kwargs.items():
-            setattr(self, k, v)
-
-    def __repr__(self):
-        return 'QueryExpression(' + ', '.join(sorted('%s=%s'%(k,repr(v)) for k, v in self.__dict__.items() if not k.startswith('_'))) +')'
-
-    def __eq__(self, other):
-        return isinstance(other, QueryExpression) and self.__dict__ == other.__dict__
-
-    def __ne__(self, other):
-        return not self.__eq__(other)
-
-    @classmethod
-    def nested(cls, operator):
-        return cls(operator=operator, operands=[])
-
-    @classmethod
-    def searchterm(cls, index=None, relation=None, term=None, boost=None):
-        result = cls(index=index, relation=relation, term=term)
-        if boost is not None:
-            result.relation_boost = boost
-        return result
-
-    def asDict(self):
-        result = {}
-        for k, v in self.__dict__.items():
-            if k == 'operands':
-                result['operands'] = [expr.asDict() for expr in v]
-            else:
-                result[k] = v
-        return result
-
-    @classmethod
-    def fromDict(cls, aDict):
-        operands = aDict.pop('operands', None)
-        result = cls(**aDict)
-        if operands:
-            result.operands = [cls.fromDict(o) for o in operands]
-        return result
-
-    def iter(self):
-        yield self
-        if self.operator:
-            for operand in self.operands:
-                for f in operand.iter():
-                    yield f
-
-    def _toString(self, indent=0):
-        operator = getattr(self, 'operator', None)
-        if operator:
-            yield "{0}{1}{2}".format(' '*indent,
-                    '!' if getattr(self, 'must_not', False) else '',
-                    operator)
-            for operand in self.operands:
-                yield '\n'.join(operand._toString(indent+4))
-        else:
-            yield "{0}{1}{2}{3}{4}".format(
-                    ' '*indent,
-                    '!' if getattr(self, 'must_not', False) else '',
-                    self.index or '',
-                    ' {0} '.format(self.relation) if self.relation else '',
-                    self.term,
-                )
-
-    def toString(self, pretty_print=True):
-        return '\n'.join(self._toString(indent=0))
