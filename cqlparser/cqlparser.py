@@ -1,38 +1,34 @@
 # -*- coding: utf-8 -*-
 ## begin license ##
 #
-#    CQLParser is a parser that builds a parsetree for the given CQL and
-#    can convert this into other formats.
-#    Copyright (C) 2005-2011 Seek You Too (CQ2) http://www.cq2.nl
+# "CQLParser" is a parser that builds a parsetree for the given CQL and can convert this into other formats.
 #
-#    This file is part of CQLParser
+# Copyright (C) 2005-2011 Seek You Too (CQ2) http://www.cq2.nl
+# Copyright (C) 2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2016 Stichting Kennisnet http://www.kennisnet.nl
 #
-#    CQLParser is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This file is part of "CQLParser"
 #
-#    CQLParser is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# "CQLParser" is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with CQLParser; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# "CQLParser" is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with "CQLParser"; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
 
+from _cqlexception import UnsupportedCQL, CQLParseException
 from cqltokenizer import tokenize
 
 DEFAULTCOMPARITORS = ['=', '>', '<', '>=', '<=', '<>', '==', 'any', 'all', 'adj', 'within', 'encloses', 'exact']
-
-class UnsupportedCQL(Exception):
-    def __call__(self, *ignoredArgs):
-        raise self
-
-class CQLParseException(Exception):
-    pass
 
 class RollBack(Exception):
     pass
@@ -51,7 +47,7 @@ class CQLAbstractSyntaxNode(object):
 
     def prettyPrint(self, offset=0):
         spaces = offset * 4 * ' '
-        classname = self.__class__.__name__ 
+        classname = self.__class__.__name__
         if len(self.children) == 1 and type(self.children[0] ) == str:
             return spaces + classname + "(" + repr(self.children[0]) + ")"
         result = [spaces + classname + "("]
@@ -295,7 +291,7 @@ class CQLParser:
         """
         modifier ::= '/' modifierName [comparitorSymbol modifierValue]
         """
-        if self._tokens[self._top] != '/': 
+        if self._tokens[self._top] != '/':
             raise RollBack
         self._top += 1
         return self._construct(MODIFIER, self._modifierName, self._comparitor, self._modifierValue)

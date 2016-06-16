@@ -2,7 +2,6 @@
 #
 # "CQLParser" is a parser that builds a parsetree for the given CQL and can convert this into other formats.
 #
-# Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
 # Copyright (C) 2016 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2016 Stichting Kennisnet http://www.kennisnet.nl
 #
@@ -24,29 +23,15 @@
 #
 ## end license ##
 
-import re
-from _cqlexception import CQLTokenizerException
+class CQLException(Exception):
+    pass
 
-#
-# This tokenization is based on the CQL specification at http://loc.gov/cql
-#
-# charString1 is every token except a " ( ) > = < / and spaces
-charString1 = r'[^"()>=<\s/]+'
-# charString2 is every token surrounded by quotes "", except \"
-charString2 = r'(?s)".*?(?:(?<!\\)")'
-# tokens are charString1, charString2 or ( ) >= <> <= > < = /
-tokens = [ r'\(', r'\)', '>=', '<>', '<=', '>', '<', r'\=', r'\/', charString2, charString1 ]
+class CQLTokenizerException(CQLException):
+    pass
 
-tokenSplitter = re.compile(r'\s*(%s)' % ('|'.join(tokens)))
+class UnsupportedCQL(CQLException):
+    def __call__(self, *ignoredArgs):
+        raise self
 
-def tokenize(text):
-    tokens = tokenSplitter.findall(text)
-    if len(_withoutWhitespace(text)) != len(_withoutWhitespace(''.join(tokens))):
-        raise CQLTokenizerException("Unrecognized token in '%s'" % text.replace("'", r"\'"))
-    return tokens
-
-
-whitespace = re.compile("\s+")
-def _withoutWhitespace(s):
-    return whitespace.sub('', s)
-
+class CQLParseException(CQLException):
+    pass
