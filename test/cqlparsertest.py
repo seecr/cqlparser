@@ -1,34 +1,33 @@
 # -*- coding: utf-8 -*-
 ## begin license ##
 #
-#    CQLParser is a parser that builds a parsetree for the given CQL and
-#    can convert this into other formats.
-#    Copyright (C) 2005-2011 Seek You Too (CQ2) http://www.cq2.nl
+# "CQLParser" is a parser that builds a parsetree for the given CQL and can convert this into other formats.
 #
-#    This file is part of CQLParser
+# Copyright (C) 2005-2011 Seek You Too (CQ2) http://www.cq2.nl
+# Copyright (C) 2018 Seecr (Seek You Too B.V.) http://seecr.nl
 #
-#    CQLParser is free software; you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation; either version 2 of the License, or
-#    (at your option) any later version.
+# This file is part of "CQLParser"
 #
-#    CQLParser is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
+# "CQLParser" is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
 #
-#    You should have received a copy of the GNU General Public License
-#    along with CQLParser; if not, write to the Free Software
-#    Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+# "CQLParser" is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with "CQLParser"; if not, write to the Free Software
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
 
 import unittest
-from cqlparser.cqlparser import CQLParser
+
 from cqlparser import parseString, UnsupportedCQL, CQLParseException, CQLTokenizerException
-from cqlparser.cqlparser import CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, MODIFIERLIST, MODIFIER, TERM, IDENTIFIER
-import string
-from cqlparser import cql2string
+from cqlparser.cqlparser import CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, RELATION, COMPARITOR, MODIFIERLIST, MODIFIER, TERM
 
 
 class CQLParserTest(unittest.TestCase):
@@ -41,7 +40,7 @@ class CQLParserTest(unittest.TestCase):
         self.assertEqualsCQL(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('term'))))), parseString('term'))
         self.assertEqualsCQL(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('white space'))))), parseString('"white space"'))
         self.assertEqualsCQL(CQL_QUERY(SCOPED_CLAUSE(SEARCH_CLAUSE(SEARCH_TERM(TERM('string "quotes"'))))), parseString(r'"string \"quotes\""'))
-    
+
     def testTermWithOrWithoutQuotes(self):
         self.assertEqualsCQL(parseString('"cats"'), parseString('cats'))
 
@@ -96,7 +95,7 @@ class CQLParserTest(unittest.TestCase):
             )
         )
         self.assertEqualsCQL(answer, parseString('term1 or term2 and term3'))
-        
+
     def testPrecedenceAndOr2(self):
         answer = CQL_QUERY(
             SCOPED_CLAUSE(
@@ -188,7 +187,8 @@ class CQLParserTest(unittest.TestCase):
         T = TERM
         R = RELATION
         self.assertEqualsCQL(Q(SC(SE(INDEX(T('field1')), R(COMPARITOR('=')), ST(T('200'))))), parseString('field1 = 200'))
-        for comparitor in ['>', '<', '>=', '<=', '<>']:
+        self.assertEqualsCQL(Q(SC(SE(INDEX(T('field1')), R(COMPARITOR('==')), ST(T('200'))))), parseString('field1 == 200'))
+        for comparitor in ['>', '<', '>=', '<=', '<>', '==']:
             self.assertException(UnsupportedCQL, 'field1 %s 200' % comparitor, supportedComparitors=['='])
 
     def testModifiers(self):
@@ -312,7 +312,7 @@ class CQLParserTest(unittest.TestCase):
         try:
             parseString(queryString, **kwargs)
             self.fail()
-        except exceptionClass, e:
+        except exceptionClass:
             pass
 
     def assertEqualsCQL(self, expected, result):
