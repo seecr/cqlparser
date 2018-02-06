@@ -23,6 +23,9 @@
 #
 ## end license ##
 
+from cql2string import quottableTermChars
+
+
 class QueryExpression(object):
     def __init__(self, **kwargs):
         self.operator = None
@@ -85,16 +88,15 @@ class QueryExpression(object):
             setattr(self, k, v)
 
     def toString(self, pretty_print=True):
-        return ''.join(self._repr(indent=0 if pretty_print else None))
+        return ''.join(self._str(indent=0 if pretty_print else None))
 
     def __str__(self):
-        return ''.join(self._repr())
+        return ''.join(self._str())
 
     def __repr__(self):
-        return 'QueryExpression(' + str(self) + ')'
+        return '%s(%s)' % (self.__class__.__name__, ', '.join("%s=%s" % (key, repr(value)) for key, value in self.__dict__.items()))
 
-    def _repr(self, indent=None):
-        prefix = lambda indent: '' if indent is None else '    '*indent
+    def _str(self, indent=None):
         if self.must_not:
             yield '!'
         if self.operator:
@@ -109,17 +111,15 @@ class QueryExpression(object):
             comma = ''
             for operand in self.operands:
                 yield comma
-                yield prefix(indent)
+                yield ' ' * 4 * (indent or 0)
                 comma = commaRepl
-                yield ''.join(operand._repr(indent))
+                yield ''.join(operand._str(indent))
             if indent is None:
                 yield ']'
             else:
                 indent -= 1
         else:
-            yield repr(' '.join(r for r in [
-                        self.index or '',
-                        self.relation or '',
-                        self.term
-                    ] if r))
-
+            term = self.term
+            if quottableTermChars.search(term):
+                term = '"%s"' % term.replace(r'"', r'\"')
+            yield repr(' '.join(r for r in [self.index, self.relation, term] if r))

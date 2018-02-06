@@ -27,11 +27,12 @@
 ## end license ##
 
 from seecr.test import SeecrTestCase
-from cqlparser.cqltoexpression import cqlToExpression, QueryExpression
+
 from cqlparser import parseString as parseCql
+from cqlparser.cqltoexpression import cqlToExpression, QueryExpression
+
 
 class CqlToExpressionTest(SeecrTestCase):
-
     def testSimpleExpression(self):
         expression = cqlToExpression(parseCql('field=value'))
         self.assertEquals("field", expression.index)
@@ -49,6 +50,13 @@ class CqlToExpressionTest(SeecrTestCase):
         self.assertEquals(None, expression.index)
         self.assertEquals(None, expression.relation)
         self.assertEquals("value", expression.term)
+
+    def testSimpleQuotedTermExpression(self):
+        expression = cqlToExpression('"the value"')
+        self.assertEquals(None, expression.index)
+        self.assertEquals(None, expression.relation)
+        self.assertEquals("the value", expression.term)
+        self.assertEquals('\'"the value"\'', str(expression))
 
     def testAndExpression(self):
         expression = cqlToExpression('field0=value0 AND field1=value1')
@@ -127,7 +135,6 @@ class CqlToExpressionTest(SeecrTestCase):
                 ]
             ), expression)
 
-
     def testEquals(self):
         self.assertEquals(QueryExpression(index='field', relation='=', term='term'), QueryExpression(index='field', relation='=', term='term'))
         self.assertEquals(cqlToExpression('field=value AND otherfield=othervalue'), QueryExpression(operator='AND', operands=[QE('field=value'), QE('otherfield=othervalue')]))
@@ -189,11 +196,13 @@ AND
 
     def testRepr(self):
         qe = cqlToExpression('aap NOT (noot OR title=mies)')
-        self.assertEquals("""QueryExpression(\
-AND['aap', !OR['noot', 'title = mies']])\
-""", repr(qe))
+        self.assertEquals("QueryExpression(operator='AND', operands=[QueryExpression(index=None, term='aap', relation=None, must_not=False, relation_boost=None, operator=None), QueryExpression(operator='OR', operands=[QueryExpression(index=None, term='noot', relation=None, must_not=False, relation_boost=None, operator=None), QueryExpression(index='title', term='mies', relation='=', must_not=False, relation_boost=None, operator=None)], must_not=True, relation_boost=None)], must_not=False, relation_boost=None)", repr(qe))
+        self.assertEquals(qe, eval(repr(qe)))
 
-
+    def testStrWithIndexAndQuotes(self):
+        qe = cqlToExpression('field="aap noot"')
+        self.assertEquals("QueryExpression(index='field', term='aap noot', relation='=', must_not=False, relation_boost=None, operator=None)", repr(qe))
+        self.assertEquals('\'field = "aap noot"\'', str(qe))
 
 
 def QE(aString, **kwargs):
@@ -204,4 +213,3 @@ def QE(aString, **kwargs):
     for k,v in kwargs.items():
         setattr(result, k, v)
     return result
-
