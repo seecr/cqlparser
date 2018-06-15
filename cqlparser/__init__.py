@@ -3,7 +3,7 @@
 # "CQLParser" is a parser that builds a parsetree for the given CQL and can convert this into other formats.
 #
 # Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2015-2016 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2015-2016, 2018 Seecr (Seek You Too B.V.) http://seecr.nl
 # Copyright (C) 2015-2016 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "CQLParser"
@@ -28,5 +28,5 @@ from _cqlexception import UnsupportedCQL, CQLParseException, CQLTokenizerExcepti
 from cqlparser import parseString, CQL_QUERY, SCOPED_CLAUSE, SEARCH_CLAUSE, BOOLEAN, SEARCH_TERM, INDEX, TERM, COMPARITOR, DEFAULTCOMPARITORS
 from cqlvisitor import CqlVisitor
 from cqlidentityvisitor import CqlIdentityVisitor
-from cql2string import cql2string
+from cql2string import cql2string, quotTerm
 from cqltoexpression import cqlToExpression
