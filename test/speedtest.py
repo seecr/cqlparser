@@ -2,7 +2,7 @@
 #
 # "CQLParser" is a parser that builds a parsetree for the given CQL and can convert this into other formats.
 #
-# Copyright (C) 2012-2013 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2012-2013, 2020 Seecr (Seek You Too B.V.) http://seecr.nl
 #
 # This file is part of "CQLParser"
 #
@@ -22,12 +22,13 @@
 #
 ## end license ##
 
-from seecr.test import SeecrTestCase
+from seecrtest.timing import T
+from unittest import TestCase
 #from cq2utils.profileit import profile
 from cqlparser import parseString, cql2string, CqlIdentityVisitor, CqlVisitor
 from time import time
 
-class SpeedTest(SeecrTestCase):
+class SpeedTest(TestCase):
 
     def testParser(self):
         q = open('ridiculouslongquery.txt').read().strip()
@@ -76,4 +77,7 @@ class SpeedTest(SeecrTestCase):
         doVisit()
         t1 = time()
         #profile(doVisit, runKCacheGrind = True)
-        self.assertTiming(0.018, t1-t0, 0.024) 
+        self.assertTiming(0.018, t1-t0, 0.024)
+
+    def assertTiming(self, t0, t, t1):
+        self.assertTrue(t0*T < t < t1*T, t/T)
