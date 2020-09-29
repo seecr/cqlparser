@@ -1,12 +1,12 @@
 ## begin license ##
 #
 # "Edurep" is a service for searching in educational repositories.
-# "Edurep" is developed for Stichting Kennisnet (http://www.kennisnet.nl) by
+# "Edurep" is developed for Stichting Kennisnet (https://www.kennisnet.nl) by
 # Seek You Too (http://www.cq2.nl). The project is based on the opensource
 # project Meresco (http://www.meresco.com).
 #
-# Copyright (C) 2015 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2015 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2015 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2015 Stichting Kennisnet https://www.kennisnet.nl
 #
 # This file is part of "Edurep"
 #

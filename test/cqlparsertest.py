@@ -4,7 +4,7 @@
 # "CQLParser" is a parser that builds a parsetree for the given CQL and can convert this into other formats.
 #
 # Copyright (C) 2005-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2018 Seecr (Seek You Too B.V.) http://seecr.nl
+# Copyright (C) 2018 Seecr (Seek You Too B.V.) https://seecr.nl
 #
 # This file is part of "CQLParser"
 #
