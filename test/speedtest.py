@@ -29,9 +29,13 @@ from cqlparser import parseString, cql2string, CqlIdentityVisitor, CqlVisitor
 from time import time
 
 class SpeedTest(TestCase):
+    @staticmethod
+    def ridiculouslongquery():
+        with open('ridiculouslongquery.txt') as f:
+            return f.read().strip()
 
     def testParser(self):
-        q = open('ridiculouslongquery.txt').read().strip()
+        q = self.ridiculouslongquery()
         def doParse():
             for i in range(10):
                 r = parseString(q)
@@ -52,7 +56,7 @@ class SpeedTest(TestCase):
         #self.assertTiming(0.180, t1-t0, 0.190) # start
 
     def testIdentityVisitor(self):
-        p = parseString(open('ridiculouslongquery.txt').read().strip())
+        p = parseString(self.ridiculouslongquery())
         def doVisit():
             for i in range(10):
                 CqlIdentityVisitor(p).visit()
@@ -69,7 +73,7 @@ class SpeedTest(TestCase):
         class PartialVisitor(CqlVisitor):
             def visitINDEX(self, node):
                 return node.visitChildren(self)
-        p = parseString(open('ridiculouslongquery.txt').read().strip())
+        p = parseString(self.ridiculouslongquery())
         def doVisit():
             for i in range(10):
                 PartialVisitor(p).visit()

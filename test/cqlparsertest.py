@@ -4,7 +4,7 @@
 # "CQLParser" is a parser that builds a parsetree for the given CQL and can convert this into other formats.
 #
 # Copyright (C) 2005-2011 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2018 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2018, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 #
 # This file is part of "CQLParser"
 #
@@ -233,15 +233,15 @@ class CQLParserTest(unittest.TestCase):
 
         mockVisitor = MockVisitor()
         q.accept(mockVisitor)
-        self.assertEquals(1, mockVisitor.visitCQL_QUERY_called)
-        self.assertEquals(q, mockVisitor.visitCQL_QUERY_args[0])
+        self.assertEqual(1, mockVisitor.visitCQL_QUERY_called)
+        self.assertEqual(q, mockVisitor.visitCQL_QUERY_args[0])
         c.accept(mockVisitor)
-        self.assertEquals(1, mockVisitor.visitCOMPARITOR_called)
-        self.assertEquals(c, mockVisitor.visitCOMPARITOR_args[0])
+        self.assertEqual(1, mockVisitor.visitCOMPARITOR_called)
+        self.assertEqual(c, mockVisitor.visitCOMPARITOR_args[0])
 
     def testName(self):
         q = CQL_QUERY(None)
-        self.assertEquals("CQL_QUERY", q.name)
+        self.assertEqual("CQL_QUERY", q.name)
 
     def testVisitReturnValue(self):
         q = CQL_QUERY(None)
@@ -250,11 +250,11 @@ class CQLParserTest(unittest.TestCase):
                 return 'nut'
         mockVisitor = MockVisitor()
         value = q.accept(mockVisitor)
-        self.assertEquals('nut', value)
+        self.assertEqual('nut', value)
 
     def testPrettyPrintSimple(self):
         q = parseString('aap')
-        self.assertEquals("""CQL_QUERY(
+        self.assertEqual("""CQL_QUERY(
     SCOPED_CLAUSE(
         SEARCH_CLAUSE(
             SEARCH_TERM(
@@ -266,7 +266,7 @@ class CQLParserTest(unittest.TestCase):
 
     def testPrettyPrintComplex(self):
         q = parseString('aap AND (noot = mies OR vuur)')
-        self.assertEquals("""CQL_QUERY(
+        self.assertEqual("""CQL_QUERY(
     SCOPED_CLAUSE(
         SCOPED_CLAUSE(
             SEARCH_CLAUSE(
@@ -305,7 +305,7 @@ class CQLParserTest(unittest.TestCase):
 )""", q.prettyPrint(), q.prettyPrint())
 
     def testHashing(self):
-        self.assertEquals(hash(parseString('term')), hash(parseString('term')))
+        self.assertEqual(hash(parseString('term')), hash(parseString('term')))
 
     ### Helper methods
     def assertException(self, exceptionClass, queryString, **kwargs):
@@ -316,5 +316,5 @@ class CQLParserTest(unittest.TestCase):
             pass
 
     def assertEqualsCQL(self, expected, result):
-        self.assertEquals(expected, result, "%s !=\n %s" % (expected.prettyPrint(), result.prettyPrint()))
+        self.assertEqual(expected, result, "%s !=\n %s" % (expected.prettyPrint(), result.prettyPrint()))
 

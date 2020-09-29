@@ -1,33 +1,30 @@
 ## begin license ##
 #
-# "Edurep" is a service for searching in educational repositories.
-# "Edurep" is developed for Stichting Kennisnet (https://www.kennisnet.nl) by
-# Seek You Too (http://www.cq2.nl). The project is based on the opensource
-# project Meresco (http://www.meresco.com).
+# "CQLParser" is a parser that builds a parsetree for the given CQL and can convert this into other formats.
 #
-# Copyright (C) 2015 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2015, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2015 Stichting Kennisnet https://www.kennisnet.nl
 #
-# This file is part of "Edurep"
+# This file is part of "CQLParser"
 #
-# "Edurep" is free software; you can redistribute it and/or modify
+# "CQLParser" is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
 # (at your option) any later version.
 #
-# "Edurep" is distributed in the hope that it will be useful,
+# "CQLParser" is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with "Edurep"; if not, write to the Free Software
+# along with "CQLParser"; if not, write to the Free Software
 # Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 #
 ## end license ##
 
-from cqlvisitor import CqlVisitor
-from cqlparser import parseString as parseCql
+from .cqlvisitor import CqlVisitor
+from .cqlparser import parseString as parseCql
 from ._queryexpression import QueryExpression
 
 def cqlToExpression(cql):

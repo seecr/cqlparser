@@ -3,7 +3,7 @@
 # "CQLParser" is a parser that builds a parsetree for the given CQL and can convert this into other formats.
 #
 # Copyright (C) 2005-2010 Seek You Too (CQ2) http://www.cq2.nl
-# Copyright (C) 2016, 2018 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2016, 2018, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2016 Stichting Kennisnet https://www.kennisnet.nl
 #
 # This file is part of "CQLParser"
@@ -26,7 +26,7 @@
 
 import re
 
-from _cqlexception import CQLTokenizerException
+from ._cqlexception import CQLTokenizerException
 
 #
 # This tokenization is based on the CQL specification at http://loc.gov/cql

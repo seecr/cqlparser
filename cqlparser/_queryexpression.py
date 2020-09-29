@@ -2,7 +2,7 @@
 #
 # "CQLParser" is a parser that builds a parsetree for the given CQL and can convert this into other formats.
 #
-# Copyright (C) 2015 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2015, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 # Copyright (C) 2015 Stichting Kennisnet https://www.kennisnet.nl
 #
 # This file is part of "CQLParser"
@@ -23,7 +23,7 @@
 #
 ## end license ##
 
-from cql2string import quottableTermChars
+from .cql2string import quottableTermChars
 
 
 class QueryExpression(object):
@@ -82,7 +82,7 @@ class QueryExpression(object):
                     yield f
 
     def replaceWith(self, expression):
-        for k in self.__dict__.keys():
+        for k in list(self.__dict__.keys()):
             delattr(self, k)
         for k,v in expression.__dict__.items():
             setattr(self, k, v)
@@ -94,7 +94,7 @@ class QueryExpression(object):
         return ''.join(self._str())
 
     def __repr__(self):
-        return '%s(%s)' % (self.__class__.__name__, ', '.join("%s=%s" % (key, repr(value)) for key, value in self.__dict__.items()))
+        return '%s(%s)' % (self.__class__.__name__, ', '.join("%s=%s" % (key, repr(value)) for key, value in sorted(self.__dict__.items())))
 
     def _str(self, indent=None):
         if self.must_not:

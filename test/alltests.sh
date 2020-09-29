@@ -3,7 +3,7 @@
 #
 # "CQLParser" is a parser that builds a parsetree for the given CQL and can convert this into other formats.
 #
-# Copyright (C) 2013 Seecr (Seek You Too B.V.) https://seecr.nl
+# Copyright (C) 2013, 2020 Seecr (Seek You Too B.V.) https://seecr.nl
 #
 # This file is part of "CQLParser"
 #
@@ -26,4 +26,4 @@
 export LANG=en_US.UTF-8
 export PYTHONPATH=.:"$PYTHONPATH"
 
-python2 _alltests.py "$@"
+python3 _alltests.py "$@"
