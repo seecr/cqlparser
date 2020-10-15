@@ -38,7 +38,7 @@ charString2 = r'(?s)".*?(?:(?<!\\)")'
 # tokens are charString1, charString2 or ( ) >= <> <= == > < = /
 tokens = [ r'\(', r'\)', '>=', '<>', '<=', '==', '>', '<', r'\=', r'\/', charString2, charString1 ]
 
-tokenSplitter = re.compile(r'\s*(%s)' % ('|'.join(tokens)))
+tokenSplitter = re.compile(r'\s*(%s)' % (r'|'.join(tokens)))
 
 def tokenize(text):
     tokens = tokenSplitter.findall(text)
@@ -47,7 +47,7 @@ def tokenize(text):
     return tokens
 
 
-whitespace = re.compile("\s+")
+whitespace = re.compile(r"\s+")
 def _withoutWhitespace(s):
     return whitespace.sub('', s)
 
