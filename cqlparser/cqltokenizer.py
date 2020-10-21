@@ -34,11 +34,11 @@ from ._cqlexception import CQLTokenizerException
 # charString1 is every token except a " ( ) > = < / and spaces
 charString1 = r'[^"()>=<\s/]+'
 # charString2 is every token surrounded by quotes "", except \"
-charString2 = r'(?s)".*?(?:(?<!\\)")'
+charString2 = r'".*?(?:(?<!\\)")'
 # tokens are charString1, charString2 or ( ) >= <> <= == > < = /
 tokens = [ r'\(', r'\)', '>=', '<>', '<=', '==', '>', '<', r'\=', r'\/', charString2, charString1 ]
 
-tokenSplitter = re.compile(r'\s*(%s)' % (r'|'.join(tokens)))
+tokenSplitter = re.compile(r'(?s)\s*(%s)' % (r'|'.join(tokens)))
 
 def tokenize(text):
     tokens = tokenSplitter.findall(text)
