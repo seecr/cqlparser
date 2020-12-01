@@ -3,7 +3,7 @@
 # "CQLParser" is a parser that builds a parsetree for the given CQL and can convert this into other formats.
 #
 # Copyright (C) 2015, 2020 Seecr (Seek You Too B.V.) http://seecr.nl
-# Copyright (C) 2015 Stichting Kennisnet http://www.kennisnet.nl
+# Copyright (C) 2015, 2020 Stichting Kennisnet http://www.kennisnet.nl
 #
 # This file is part of "CQLParser"
 #
@@ -25,8 +25,7 @@
 
 from unittest import TestCase
 
-from cqlparser import parseString as parseCql
-from cqlparser.cqltoexpression import cqlToExpression, QueryExpression
+from cqlparser import parseString as parseCql, cqlToExpression, QueryExpression
 
 
 class CqlToExpressionTest(TestCase):
